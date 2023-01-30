@@ -1,0 +1,446 @@
+:root {
+  --foreground: #4d4d4c;
+  --background: #ffffff;
+  --selection: #d6d6d6;
+  --line: #efefef;
+  --comment: #8e908c;
+  --red: #c82829;
+  --orange: #f5871f;
+  --yellow: #eab700;
+  --green: #718c00;
+  --aqua: #3e999f;
+  --blue: #4271ae;
+  --purple: #8959a8;
+  --window: #efefef;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground: #c5c8c6;
+    --background: #1d1f21;
+    --selection: #373b41;
+    --line: #282a2e;
+    --comment: #969896;
+    --red: #cc6666;
+    --orange: #de935f;
+    --yellow: #f0c674;
+    --green: #b5bd68;
+    --aqua: #8abeb7;
+    --blue: #81a2be;
+    --purple: #b294bb;
+    --window: #4d5057;
+  }
+}
+
+:root {
+  --toolbar-fg: var(--blue);
+  --toolbar-bg: var(--window);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+*:focus {
+  outline: none;
+}
+
+code {
+  white-space: pre;
+  font-family: var(--monospace-family);
+}
+
+h1,h2,h3,h4,h5,h6 {
+  font-weight: normal;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  font-family: system-ui;
+  line-height: 1.5;
+  background-color: var(--background);
+  color: var(--foreground);
+
+  --monospace-family: Menlo, monospace;
+  --monospace-size: 13px;
+}
+
+a { color: var(--blue); }
+a:visited { color: var(--purple); }
+a:active { color: var(--red); }
+
+.cm-content {
+  font-family: var(--monospace-family);
+  font-size: var(--monospace-size);
+}
+
+html {
+  height: 100%;
+}
+
+main {
+  padding: 0.5em;
+  display: block;
+  margin: 0 auto;
+  max-width: 768px;
+}
+
+ul {
+  list-style-position: inside;
+}
+
+ul ul {
+  padding-left: 2em;
+}
+
+main > *+h1,
+main > *+h2,
+main > *+h3,
+main > *+p,
+main > *+ul,
+main > *+div {
+  margin-top: 1em;
+}
+
+header {
+  --header-height: 40px;
+  --header-padding: 0.5em;
+  --text-color: #1d1f21;
+  color: var(--text-color);
+  background-color: #ffc6f9;
+  background-image: linear-gradient(to right, #ffc6f9, #fec4b2);
+  height: var(--header-height);
+  line-height: var(--header-height);
+  display: flex;
+}
+
+header .title, header .spacer {
+  flex: 1;
+}
+
+header a {
+  text-decoration: none;
+}
+header a.text-link {
+  padding: 0 var(--header-padding);
+}
+
+header a,
+header a:visited,
+header a:active {
+  color: var(--text-color);
+}
+
+header svg {
+  fill: var(--text-color);
+  width: 24px;
+  height: 24px;
+}
+
+header > :first-child {
+  padding-left: var(--header-padding);
+}
+header > :last-child {
+  padding-right: var(--header-padding);
+}
+header .image-link {
+  display: flex;
+  width: var(--header-height);
+  height: var(--header-height);
+  justify-content: center;
+  align-items: center;
+}
+
+.bauble-placeholder {
+  height: 256px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.bauble-placeholder > .script {
+  display: none;
+}
+
+.bauble-placeholder .canvas-container, .bauble-placeholder .code-container {
+  position: relative;
+}
+.bauble-placeholder .bauble canvas {
+  max-height: calc(min(100%, var(--canvas-height)));
+}
+.bauble-placeholder .toolbar {
+  background-color: initial;
+}
+.bauble-placeholder .toolbar:last-child {
+  bottom: 0;
+}
+.bauble-placeholder .toolbar {
+  z-index: 1;
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+.bauble-placeholder .code-container .toolbar {
+  background-image: none;
+  border: none;
+  pointer-events: none;
+}
+.bauble-placeholder .code-container .toolbar .indicator.compilation-error svg {
+  fill: var(--background);
+}
+.bauble-placeholder .canvas-container .toolbar input[inputmode="numeric"] {
+  background: transparent;
+}
+.bauble-placeholder .canvas-container .toolbar {
+  transition: visibility 0s 300ms, opacity 150ms 300ms;
+}
+.bauble-placeholder .canvas-container:not(:hover) .toolbar {
+  opacity: 0;
+  visibility: hidden;
+  transition: visibility 0s 450ms, opacity 150ms 300ms;
+}
+.bauble-placeholder {
+  border: solid 2px var(--window);
+}
+
+body.main-page {
+  display: flex;
+  flex-direction: column;
+}
+
+body.main-page .bauble {
+  flex: 1;
+}
+
+.bauble {
+  --control-height: 40px;
+  --horizontal-grip: linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0), rgba(0,0,0,0.2));
+  --vertical-grip: linear-gradient(to right, rgba(0,0,0,0.15), rgba(0,0,0,0), rgba(0,0,0,0.2));
+
+  height: 100%;
+  display: flex;
+  overflow: hidden;
+  flex-direction: row-reverse;
+}
+
+.bauble > * { overflow: hidden; }
+
+.bauble .code-container {
+  display: flex;
+  flex-direction: column;
+  /* TODO: this should be width OR height depending on orientation */
+  flex: 1 1 var(--canvas-width);
+}
+
+.bauble .canvas-container {
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  flex-direction: column;
+  /* TODO: this should be width OR height depending on orientation */
+  flex: 0 1 var(--canvas-width);
+}
+
+.bauble .editor-container {
+  overflow: hidden;
+  display: flex;
+  flex: 1;
+}
+
+.bauble .editor-container > * {
+  flex: 1;
+  max-width: 100%; /* required for horizontal scrolling */
+}
+
+.bauble .output-resize-handle {
+  cursor: ns-resize;
+  touch-action: none;
+  background-color: var(--toolbar-bg);
+  background-image: var(--horizontal-grip);
+  flex: none;
+  flex-basis: 4px;
+}
+
+.bauble .resize-handle {
+  flex: none;
+  flex-basis: 4px;
+  touch-action: none;
+}
+
+.bauble .canvas-resize-handle {
+  cursor: ew-resize;
+  background-color: var(--toolbar-bg);
+  background-image: var(--vertical-grip);
+}
+
+.bauble .output-container:not(:empty) {
+  padding: 8px;
+}
+.bauble .output-container {
+  overflow: auto;
+  max-height: 25%;
+}
+
+.bauble .output-container .err {
+  color: var(--red);
+}
+
+.bauble .output-container, span.timestamp, .toolbar input[inputmode=numeric] {
+  font-family: var(--monospace-family);
+  font-size: var(--monospace-size);
+}
+
+.toolbar {
+  width: 100%;
+  height: var(--control-height);
+  line-height: var(--control-height);
+  display: flex;
+  user-select: none;
+  background-color: var(--window);
+  flex: none;
+  overflow-y: hidden;
+  overflow-x: auto;
+  color: var(--toolbar-fg);
+  fill: var(--toolbar-fg);
+  background-color: var(--toolbar-bg);
+  background-image: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.1));
+  box-sizing: border-box;
+}
+
+.toolbar:last-child {
+  border-top: solid 1px rgba(0,0,0,0.25);
+}
+.toolbar:not(:last-child) {
+  border-bottom: solid 1px rgba(0,0,0,0.25);
+}
+
+.toolbar button:not(.hidden:first-child)+button, .toolbar label+label {
+  margin-left: -6px;
+}
+
+.toolbar .spacer {
+  flex: 1;
+}
+.toolbar .scrubber {
+  flex: 1;
+  background-color: #8f8;
+}
+.toolbar .timestamp {
+  padding: 0 1ch;
+}
+.toolbar input[inputmode=numeric] {
+  text-align: center;
+  border: none;
+  width: 6ch;
+  color: var(--toolbar-fg);
+  background-color: var(--toolbar-bg);
+  box-shadow: inset 0 0 3px rgba(0,0,0,0.5);
+  border-radius: 2px;
+  margin: 4px 0;
+}
+.toolbar input[inputmode=numeric]:last-child {
+  margin-right: 4px;
+}
+
+.toolbar .text {
+  padding: 0 4px;
+}
+
+.toolbar fieldset {
+  display: inline;
+  border: none;
+  padding: none;
+  white-space: nowrap;
+}
+
+.toolbar button {
+  min-width: var(--control-height);
+  border: none;
+  cursor: pointer;
+  background-color: initial;
+}
+
+.toolbar fieldset label {
+  display: inline-block;
+  height: 100%;
+  cursor: pointer;
+  min-width: var(--control-height);
+  text-align: center;
+}
+
+.toolbar fieldset input[type=radio] {
+  display: none;
+}
+
+.toolbar button svg,
+.toolbar fieldset input[type=radio] + span,
+.toolbar fieldset input[type=radio] + svg {
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.toolbar fieldset input[type=radio]:checked + span,
+.toolbar fieldset input[type=radio]:checked + svg {
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+.toolbar button:hover svg,
+.toolbar fieldset label:hover input[type=radio] + span,
+.toolbar fieldset label:hover input[type=radio] + svg {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.toolbar button:active svg,
+.toolbar fieldset label:hover input[type=radio]:checked + span,
+.toolbar fieldset label:hover input[type=radio]:checked + svg {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.toolbar .indicator {
+  min-width: var(--control-height);
+  display: flex;
+}
+.toolbar fieldset {
+  display: flex;
+  flex-direction: row;
+}
+.toolbar .indicator,
+.toolbar fieldset label,
+.toolbar button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.toolbar .indicator svg {
+  border-radius: 12px;
+  padding: 2px;
+}
+.toolbar .indicator.compilation-error svg {
+  background-color: var(--red);
+  fill: var(--toolbar-bg);
+}
+.toolbar .hidden {
+  display: none;
+}
+.toolbar .indicator svg,
+.toolbar fieldset label svg,
+.toolbar button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.bauble canvas {
+  max-width: calc(min(100%, var(--canvas-width)));
+  max-height: calc(min(100% - 2 * var(--control-height), var(--canvas-height)));
+  touch-action: none;
+}
+
+@media all and (max-width: 512px) {
+  .bauble {
+    flex-direction: column;
+  }
+  .bauble .resize-handle { flex-basis: 12px; }
+  .bauble .canvas-resize-handle { background: var(--horizontal-grip); cursor: ns-resize; }
+  .bauble .output-container { height: 1.5em; }
+}

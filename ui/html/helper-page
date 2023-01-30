@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(dirname "$0")
+
+invocation=$1
+shift
+
+printf '<!doctype html>
+<html>
+%s
+<body>
+  %s
+  <main>
+    %s
+  </main>
+</body>
+</html>
+' "$($root/head "$@")" "$($root/header)" "$($invocation)"

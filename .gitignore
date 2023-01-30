@@ -1,0 +1,5 @@
+diary.md
+public/
+build/*
+!build/*.do
+.redo
