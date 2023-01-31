@@ -39,7 +39,7 @@ declare module 'wasm-runtime' {
 
   export interface Module extends EmscriptenModule {
     evaluate_script: ((_: string) => EvaluationResult);
-    run_turtles: ((_: number) => RunResult);
+    run_doodles: ((_: number) => RunResult);
     free_environment: ((_: number) => void);
     // TODO, obviosly
     FS: WhyDoesTypescriptAllowGarbageHere;

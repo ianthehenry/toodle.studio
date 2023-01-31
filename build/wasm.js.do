@@ -5,7 +5,7 @@ actual_outpath_jfc=$PWD/$3
 cd ..
 
 redo-ifchange janet/janet.{c,h} src/driver.cpp
-redo-ifchange build/turtles.jimage src/intro.janet
+redo-ifchange build/toodles.jimage src/intro.janet
 
 extra_flags="-O0"
 if [[ $mode == "prod" ]]; then
@@ -18,7 +18,7 @@ emcc \
   -I janet \
   janet/janet.c \
   src/driver.cpp \
-  --embed-file build/turtles.jimage@turtles.jimage \
+  --embed-file build/toodles.jimage@toodles.jimage \
   --embed-file src/intro.janet@intro.janet \
   -lembind \
   -s "EXPORTED_FUNCTIONS=['_main']" \

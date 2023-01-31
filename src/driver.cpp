@@ -100,7 +100,7 @@ void free_environment(uintptr_t environment_ptr) {
   janet_gcunroot(janet_wrap_table(reinterpret_cast<JanetTable *>(environment_ptr)));
 }
 
-ContinueResult run_turtles(uintptr_t environment_ptr) {
+ContinueResult run_doodles(uintptr_t environment_ptr) {
   if (janetfn_run == NULL) {
     janet_panicf("unable to initialize runner");
   }
@@ -174,7 +174,7 @@ int main() {
   JanetTable *lookup = janet_env_lookup(core_env);
 
   size_t image_length;
-  unsigned char *image = read_file("turtles.jimage", &image_length);
+  unsigned char *image = read_file("toodles.jimage", &image_length);
 
   Janet environment = janet_unmarshal(image, image_length, 0, lookup, NULL);
   if (!janet_checktype(environment, JANET_TABLE)) {
@@ -224,6 +224,6 @@ EMSCRIPTEN_BINDINGS(module) {
     ;
 
   function("evaluate_script", &evaluate_script);
-  function("run_turtles", &run_turtles);
+  function("run_doodles", &run_doodles);
   function("free_environment", &free_environment);
 };

@@ -1,22 +1,22 @@
 (use ./globals)
 (defn run [env]
-  (def turtles (env *turtles*))
+  (def doodles (env *doodles*))
 
-  (def new-turtles @[])
+  (def new-doodles @[])
   (def lines @[])
-  (each turtle turtles
+  (each turtle doodles
     (def next-action (resume turtle))
     (match (fiber/status turtle)
       :pending
         (unless (nil? next-action)
-          (array/push new-turtles turtle)
+          (array/push new-doodles turtle)
           (array/push lines next-action))
       :error (eprintf "turtle error %q" next-action)
       :dead ()
       _ (error "unexpected next-action")))
 
   # TODO: this is pretty inefficient...
-  (array/clear turtles)
-  (array/concat turtles new-turtles)
+  (array/clear doodles)
+  (array/concat doodles new-doodles)
 
   lines)

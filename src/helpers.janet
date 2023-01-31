@@ -128,3 +128,8 @@
 (def gray [0.5 0.5 0.5 1])
 (def dark-gray [0.25 0.25 0.25 1])
 (def black [0 0 0 1])
+
+(def sin math/sin)
+(def cos math/cos)
+(defn sin+ [x] (* 0.5 (+ 1 (math/sin x))))
+(defn cos+ [x] (* 0.5 (+ 1 (math/cos x))))

@@ -1,6 +1,6 @@
-# [Turtles](https://bauble.studio)
+# [Toodle Studio](https://toodle.studio)
 
-Concurrent turtles.
+Turtle doodles.
 
 # Dependencies
 

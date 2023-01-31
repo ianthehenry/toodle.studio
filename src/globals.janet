@@ -1,2 +1,1 @@
-(def *turtle* :turtle)
-(def *turtles* :turtles)
+(def *doodles* :doodles)

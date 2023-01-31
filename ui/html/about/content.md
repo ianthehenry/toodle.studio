@@ -8,7 +8,7 @@ I made this as an example app for a book I'm writing about the [Janet programmin
 
 If you like this, check out my much-more-interesting art playground [Bauble](https://bauble.studio)!
 
-- <a href="mailto:ianthehenry@gmail.com?subject=Let's talk about Turtle Academy">Email</a>
+- <a href="mailto:ianthehenry@gmail.com?subject=Let's talk about Toodle Studio">Email</a>
 - [Twitter](https://twitter.com/ianthehenry)
 - [GitHub](https://github.com/ianthehenry/turtle.academy/discussions)
 

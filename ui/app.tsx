@@ -78,16 +78,6 @@ const EditorToolbar: Component<{state: EvaluationState}> = (props) => {
   </div>;
 };
 
-const timestampInput = (signal: Signal.T<Seconds>): JSX.Element => {
-  return <input
-    inputmode="numeric"
-    value={Signal.get(signal).toFixed(2)}
-    autocomplete="off"
-    onChange={(e) => {
-      Signal.set(signal, parseInt(e.currentTarget.value, 10) as Seconds);
-    }} />;
-};
-
 interface AnimationToolbarProps {
   timer: Timer,
 }
@@ -100,16 +90,6 @@ const AnimationToolbar: Component<AnimationToolbarProps> = (props) => {
     </button>
     <button title="Stop" onClick={() => props.timer.stop()}><Icon name="stop" /></button>
     <span title="Current timestamp" class="timestamp">{Signal.get(props.timer.t).toFixed(2)}</span>
-    <div class="spacer"></div>
-    {/* <div class="scrubber"></div>*/}
-    {choices(props.timer.loopMode, [
-      { value: LoopMode.NoLoop, icon: "arrow-bar-right", title: "No loop" },
-      { value: LoopMode.Wrap, icon: "repeat", title: "Loop" },
-      { value: LoopMode.Reverse, icon: "arrow-left-right", title: "Loop back and forth" },
-    ])}
-    {timestampInput(props.timer.loopStart)}
-    <span class="text">to</span>
-    {timestampInput(props.timer.loopEnd)}
   </div>;
 };
 
@@ -179,7 +159,8 @@ const App = (props: Props) => {
   let editorContainer: HTMLDivElement;
   let canvas: HTMLCanvasElement;
   let editor: EditorView;
-  let outputContainer: HTMLElement;
+  let evalOutputContainer: HTMLElement;
+  let runOutputContainer: HTMLPreElement;
 
   let isGesturing = false;
   let gestureEndedAt = 0;
@@ -238,8 +219,8 @@ const App = (props: Props) => {
       }
 
       if (Signal.get(scriptDirty)) {
-        outputContainer.innerHTML = '';
-        outputChannel.target = outputContainer;
+        evalOutputContainer.innerHTML = '';
+        outputChannel.target = evalOutputContainer;
         const result = runtime.evaluate_script(editor.state.doc.toString());
         Signal.set(scriptDirty, false);
 
@@ -256,17 +237,19 @@ const App = (props: Props) => {
         outputChannel.target = null;
       }
 
-      if (true) {
+      if (currentEnvironment == null) {
         if (currentEnvironment != null) {
           runtime.free_environment(currentEnvironment);
         }
+        runOutputContainer.innerHTML = '';
         currentEnvironment = nextEnvironment;
       }
 
       if (currentEnvironment != null) {
         const resolution = canvasResolution();
         const origin = {x: resolution.width * 0.5, y: resolution.height * 0.5};
-        const result = runtime.run_turtles(currentEnvironment);
+        outputChannel.target = runOutputContainer;
+        const result = runtime.run_doodles(currentEnvironment);
         if (result.isError) {
           Signal.set(evaluationState, EvaluationState.EvaluationError);
           console.error(result.error);
@@ -335,6 +318,7 @@ const App = (props: Props) => {
         tabindex={props.focusable ? 0 : undefined}
       />
       <AnimationToolbar timer={timer} />
+      <pre class="runtime-output-container" ref={runOutputContainer!}></pre>
     </div>
     <div class="resize-handle canvas-resize-handle"
       title="double click to auto size"
@@ -345,7 +329,7 @@ const App = (props: Props) => {
     <div class="code-container" ref={codeContainer!}>
       <EditorToolbar state={Signal.get(evaluationState)} />
       <div class="editor-container" ref={editorContainer!} />
-      <ResizableArea ref={outputContainer!} />
+      <ResizableArea ref={evalOutputContainer!} />
     </div>
   </div>;
 };

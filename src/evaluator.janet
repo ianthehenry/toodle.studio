@@ -13,8 +13,8 @@
 
 (defn evaluate [user-script]
   (def env (make-env template-env))
-  (def turtles @[])
-  (put env *turtles* turtles)
+  (def doodles @[])
+  (put env *doodles* doodles)
 
   (def errors @[])
   (var error-fiber nil)
@@ -37,8 +37,8 @@
     :env env
     :chunks (chunk-string user-script)
     :source "script"
-    :on-parse-error parse-error
-    :on-compile-error compile-error
+#    :on-parse-error parse-error
+#    :on-compile-error compile-error
     :on-status (fn [fiber value]
       (unless (= (fiber/status fiber) :dead)
         (array/push errors value)
