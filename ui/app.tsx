@@ -7,7 +7,7 @@ import * as Signal from './signals';
 import {mod, clamp} from './util';
 import {vec2} from 'gl-matrix';
 import type {Seconds} from './types';
-import type {Module, Line, Point, Color, LineVector} from 'wasm-runtime';
+import type {Module, Line, Point, Color, LineVector, Environment, Image} from 'wasm-runtime';
 import OutputChannel from './output-channel';
 import RenderLoop from './render-loop';
 import type {Property} from 'csstype';
@@ -161,6 +161,7 @@ const App = (props: Props) => {
   let editor: EditorView;
   let evalOutputContainer: HTMLElement;
   let runOutputContainer: HTMLPreElement;
+  let ctx: CanvasRenderingContext2D;
 
   let isGesturing = false;
   let gestureEndedAt = 0;
@@ -186,6 +187,34 @@ const App = (props: Props) => {
     }
   });
 
+  let currentImage: Image | null = null;
+  let nextImage: Image | null = null;
+  let currentEnvironment: Environment | null = null;
+
+  function loadNext() {
+    if (nextImage != null) {
+      if (currentImage != null) {
+        runtime.release_image(currentImage);
+      }
+      if (currentEnvironment != null) {
+        runtime.release_environment(currentEnvironment);
+      }
+
+      currentImage = nextImage;
+      currentEnvironment = null;
+      runtime.retain_image(currentImage);
+      runOutputContainer.innerHTML = '';
+    }
+  }
+
+  function restart() {
+    ctx.fillStyle = '#1d1f21';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (currentImage != null) {
+      currentEnvironment = runtime.toodle_start(currentImage).environment;
+    }
+  }
+
   onMount(() => {
     intersectionObserver.observe(canvas);
     editor = installCodeMirror({
@@ -195,10 +224,7 @@ const App = (props: Props) => {
       onChange: () => Signal.set(scriptDirty, true),
     });
 
-    const ctx = canvas.getContext('2d')!;
-
-    let currentEnvironment: number | null = null;
-    let nextEnvironment: number | null = null;
+    ctx = canvas.getContext('2d')!;
 
     const renderLoop = new RenderLoop((elapsed) => batch(() => {
       if (!Signal.get(isVisible)) {
@@ -221,35 +247,34 @@ const App = (props: Props) => {
       if (Signal.get(scriptDirty)) {
         evalOutputContainer.innerHTML = '';
         outputChannel.target = evalOutputContainer;
-        const result = runtime.evaluate_script(editor.state.doc.toString());
+        const result = runtime.toodle_compile(editor.state.doc.toString());
         Signal.set(scriptDirty, false);
 
-        if (nextEnvironment != null && currentEnvironment != nextEnvironment) {
-          runtime.free_environment(nextEnvironment);
+        if (nextImage != null) {
+          runtime.release_image(nextImage);
         }
         if (result.isError) {
-          nextEnvironment = null;
+          nextImage = null;
           Signal.set(evaluationState, EvaluationState.EvaluationError);
           console.error(result.error);
         } else {
-          nextEnvironment = result.environment;
+          nextImage = result.image;
         }
         outputChannel.target = null;
       }
 
+      if (currentImage == null && nextImage != null) {
+        loadNext();
+      }
       if (currentEnvironment == null) {
-        if (currentEnvironment != null) {
-          runtime.free_environment(currentEnvironment);
-        }
-        runOutputContainer.innerHTML = '';
-        currentEnvironment = nextEnvironment;
+        restart();
       }
 
       if (currentEnvironment != null) {
         const resolution = canvasResolution();
         const origin = {x: resolution.width * 0.5, y: resolution.height * 0.5};
         outputChannel.target = runOutputContainer;
-        const result = runtime.run_doodles(currentEnvironment);
+        const result = runtime.toodle_continue(currentEnvironment);
         if (result.isError) {
           Signal.set(evaluationState, EvaluationState.EvaluationError);
           console.error(result.error);
@@ -258,7 +283,6 @@ const App = (props: Props) => {
           drawLines(ctx, origin, result.lines, Signal.get(pixelRatio));
         }
       }
-
     }));
 
     Signal.onEffect([

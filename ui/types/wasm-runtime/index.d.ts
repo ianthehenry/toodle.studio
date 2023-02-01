@@ -25,22 +25,33 @@ declare module 'wasm-runtime' {
     size: () => number,
   }
 
-  export interface EvaluationResult {
+  export type Image = number;
+  export type Environment = number;
+
+  export interface CompileResult {
     isError: boolean,
     error: string,
-    environment: number,
+    image: Image,
   }
 
-  export interface RunResult {
+  export interface StartResult {
+    environment: Environment,
+  }
+
+  export interface ContinueResult {
     isError: boolean,
     error: string,
     lines: LineVector,
   }
 
   export interface Module extends EmscriptenModule {
-    evaluate_script: ((_: string) => EvaluationResult);
-    run_doodles: ((_: number) => RunResult);
-    free_environment: ((_: number) => void);
+    toodle_compile: ((_: string) => CompilationResult);
+    toodle_start: ((_: Image) => StartResult);
+    toodle_continue: ((_: Environment) => ContinueResult);
+    retain_image: ((_: Image) => void);
+    release_image: ((_: Image) => void);
+    retain_environment: ((_: Environment) => void);
+    release_environment: ((_: Environment) => void);
     // TODO, obviosly
     FS: WhyDoesTypescriptAllowGarbageHere;
   }

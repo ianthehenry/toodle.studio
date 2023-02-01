@@ -9,13 +9,28 @@ using std::string;
 static JanetFunction *janetfn_evaluate = NULL;
 static JanetFunction *janetfn_run = NULL;
 
-JanetFunction *extract_function(JanetTable *env, const char *name) {
-  JanetTable *declaration = janet_unwrap_table(janet_table_get(env, janet_csymbolv(name)));
-  JanetFunction *function = janet_unwrap_function(janet_table_get(declaration, janet_ckeywordv("value")));
-  if (!function) {
-    fprintf(stderr, "failed to extract function %s\n", name);
+Janet env_lookup(JanetTable *env, const char *name) {
+  Janet entry = janet_table_get(env, janet_csymbolv(name));
+  if (!janet_checktype(entry, JANET_TABLE)) {
+    janet_panicf("environment entry %s missing", name);
   }
-  return function;
+  return janet_table_get(janet_unwrap_table(entry), janet_ckeywordv("value"));
+}
+
+JanetFunction *env_lookup_function(JanetTable *env, const char *name) {
+  Janet value = env_lookup(env, name);
+  if (!janet_checktype(value, JANET_FUNCTION)) {
+    janet_panicf("expected %s to be a function, got %q\n", name, value);
+  }
+  return janet_unwrap_function(value);
+}
+
+JanetTable *env_lookup_table(JanetTable *env, const char *name) {
+  Janet value = env_lookup(env, name);
+  if (!janet_checktype(value, JANET_TABLE)) {
+    janet_panicf("expected %s to be a table, got %q\n", name, value);
+  }
+  return janet_unwrap_table(value);
 }
 
 bool call_fn(JanetFunction *fn, int argc, const Janet *argv, Janet *out) {
@@ -47,9 +62,14 @@ struct Line {
   double width;
 };
 
-struct CompilationResult {
+struct CompileResult {
   bool is_error;
   string error;
+  uintptr_t image;
+};
+
+struct StartResult {
+  /* TODO: also background color, fade info? */
   uintptr_t environment;
 };
 
@@ -59,11 +79,11 @@ struct ContinueResult {
   std::vector<Line> lines;
 };
 
-CompilationResult compilation_error(string message) {
-  return (CompilationResult) {
+CompileResult compilation_error(string message) {
+  return (CompileResult) {
     .is_error = true,
     .error = message,
-    .environment = NULL,
+    .image = NULL,
   };
 }
 
@@ -75,7 +95,21 @@ ContinueResult continue_error(string message) {
   };
 }
 
-CompilationResult evaluate_script(string source) {
+void retain_environment(uintptr_t environment_ptr) {
+  janet_gcroot(janet_wrap_table(reinterpret_cast<JanetTable *>(environment_ptr)));
+}
+void release_environment(uintptr_t environment_ptr) {
+  janet_gcunroot(janet_wrap_table(reinterpret_cast<JanetTable *>(environment_ptr)));
+}
+
+void retain_image(uintptr_t image_ptr) {
+  janet_gcroot(janet_wrap_buffer(reinterpret_cast<JanetBuffer *>(image_ptr)));
+}
+void release_image(uintptr_t image_ptr) {
+  janet_gcunroot(janet_wrap_buffer(reinterpret_cast<JanetBuffer *>(image_ptr)));
+}
+
+CompileResult toodle_compile(string source) {
   if (janetfn_evaluate == NULL) {
     fprintf(stderr, "unable to initialize evaluator\n");
     return compilation_error("function uninitialized");
@@ -88,19 +122,32 @@ CompilationResult evaluate_script(string source) {
     return compilation_error("evaluation error");
   }
 
-  janet_gcroot(evaluation_result);
-  return (CompilationResult) {
+  JanetTable *reverse_lookup = env_lookup_table(janet_core_env(NULL), "make-image-dict");
+  JanetBuffer *image = janet_buffer(2 << 8);
+  janet_marshal(image, evaluation_result, reverse_lookup, 0);
+
+  janet_gcroot(janet_wrap_buffer(image));
+  return (CompileResult) {
    .is_error = false,
    .error = "",
-   .environment = reinterpret_cast<uintptr_t>(janet_unwrap_table(evaluation_result)),
+   .image = reinterpret_cast<uintptr_t>(image),
   };
 }
 
-void free_environment(uintptr_t environment_ptr) {
-  janet_gcunroot(janet_wrap_table(reinterpret_cast<JanetTable *>(environment_ptr)));
+StartResult toodle_start(uintptr_t image_ptr) {
+  JanetBuffer *image = reinterpret_cast<JanetBuffer *>(image_ptr);
+  JanetTable *lookup = env_lookup_table(janet_core_env(NULL), "load-image-dict");
+  Janet value = janet_unmarshal(image->data, image->count, 0, lookup, NULL);
+  if (!janet_checktype(value, JANET_TABLE)) {
+    janet_panicf("%q is not an environment table", value);
+  }
+  janet_gcroot(value);
+  return (StartResult) {
+    .environment = reinterpret_cast<uintptr_t>(janet_unwrap_table(value)),
+  };
 }
 
-ContinueResult run_doodles(uintptr_t environment_ptr) {
+ContinueResult toodle_continue(uintptr_t environment_ptr) {
   if (janetfn_run == NULL) {
     janet_panicf("unable to initialize runner");
   }
@@ -140,6 +187,7 @@ ContinueResult run_doodles(uintptr_t environment_ptr) {
   };
 }
 
+// TODO: just use JanetBuffer? Why am I bothering with this?
 unsigned char *read_file(const char *filename, size_t *length) {
   size_t capacity = 2 << 17;
   unsigned char *src = (unsigned char *)malloc(capacity * sizeof(unsigned char));
@@ -169,9 +217,7 @@ unsigned char *read_file(const char *filename, size_t *length) {
 EMSCRIPTEN_KEEPALIVE
 int main() {
   janet_init();
-  JanetTable *core_env = janet_core_env(NULL);
-  // TODO: shouldn't this be load-image-dict?
-  JanetTable *lookup = janet_env_lookup(core_env);
+  JanetTable *lookup = env_lookup_table(janet_core_env(NULL), "load-image-dict");
 
   size_t image_length;
   unsigned char *image = read_file("toodles.jimage", &image_length);
@@ -181,9 +227,9 @@ int main() {
     janet_panicf("invalid image %q", environment);
   }
 
-  janetfn_evaluate = extract_function(janet_unwrap_table(environment), "evaluator/evaluate");
+  janetfn_evaluate = env_lookup_function(janet_unwrap_table(environment), "evaluator/evaluate");
   janet_gcroot(janet_wrap_function(janetfn_evaluate));
-  janetfn_run = extract_function(janet_unwrap_table(environment), "runner/run");
+  janetfn_run = env_lookup_function(janet_unwrap_table(environment), "runner/run");
   janet_gcroot(janet_wrap_function(janetfn_run));
 }
 
@@ -211,10 +257,14 @@ EMSCRIPTEN_BINDINGS(module) {
 
   register_vector<Line>("LineVector");
 
-  value_object<CompilationResult>("CompilationResult")
-    .field("isError", &CompilationResult::is_error)
-    .field("error", &CompilationResult::error)
-    .field("environment", &CompilationResult::environment)
+  value_object<CompileResult>("CompileResult")
+    .field("isError", &CompileResult::is_error)
+    .field("error", &CompileResult::error)
+    .field("image", &CompileResult::image)
+    ;
+
+  value_object<StartResult>("StartResult")
+    .field("environment", &StartResult::environment)
     ;
 
   value_object<ContinueResult>("ContinueResult")
@@ -223,7 +273,11 @@ EMSCRIPTEN_BINDINGS(module) {
     .field("lines", &ContinueResult::lines)
     ;
 
-  function("evaluate_script", &evaluate_script);
-  function("run_doodles", &run_doodles);
-  function("free_environment", &free_environment);
+  function("toodle_compile", &toodle_compile);
+  function("toodle_start", &toodle_start);
+  function("toodle_continue", &toodle_continue);
+  function("retain_environment", &retain_environment);
+  function("release_environment", &release_environment);
+  function("retain_image", &retain_image);
+  function("release_image", &release_image);
 };
