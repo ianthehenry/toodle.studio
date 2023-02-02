@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Calvin Rose
+* Copyright (c) 2023 Calvin Rose
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to
@@ -26,10 +26,10 @@
 #define JANETCONF_H
 
 #define JANET_VERSION_MAJOR 1
-#define JANET_VERSION_MINOR 24
+#define JANET_VERSION_MINOR 26
 #define JANET_VERSION_PATCH 0
 #define JANET_VERSION_EXTRA ""
-#define JANET_VERSION "1.24.0"
+#define JANET_VERSION "1.26.0"
 
 /* #define JANET_BUILD "local" */
 
@@ -55,6 +55,8 @@
 /* #define JANET_NO_SYMLINKS */
 /* #define JANET_NO_UMASK */
 /* #define JANET_NO_THREADS */
+/* #define JANET_NO_FFI */
+/* #define JANET_NO_FFI_JIT */
 
 /* Other settings */
 /* #define JANET_DEBUG */
@@ -235,6 +237,13 @@ extern "C" {
 #endif
 #endif
 
+/* If FFI is enabled and FFI-JIT is not disabled... */
+#ifdef JANET_FFI
+#ifndef JANET_NO_FFI_JIT
+#define JANET_FFI_JIT
+#endif
+#endif
+
 /* Enable or disable the assembler. Enabled by default. */
 #ifndef JANET_NO_ASSEMBLER
 #define JANET_ASSEMBLER
@@ -300,7 +309,7 @@ extern "C" {
 /* Maximum depth to follow table prototypes before giving up and returning nil. */
 #define JANET_MAX_PROTO_DEPTH 200
 
-/* Maximum depth to follow table prototypes before giving up and returning nil. */
+/* Prevent macros to expand too deeply and error out. */
 #define JANET_MAX_MACRO_EXPAND 200
 
 /* Define default max stack size for stacks before raising a stack overflow error.
@@ -1157,6 +1166,8 @@ struct JanetAbstractType {
     int32_t (*hash)(void *p, size_t len);
     Janet(*next)(void *p, Janet key);
     Janet(*call)(void *p, int32_t argc, Janet *argv);
+    size_t (*length)(void *p, size_t len);
+    JanetByteView(*bytes)(void *p, size_t len);
 };
 
 /* Some macros to let us add extra types to JanetAbstract types without
@@ -1174,7 +1185,9 @@ struct JanetAbstractType {
 #define JANET_ATEND_COMPARE     NULL,JANET_ATEND_HASH
 #define JANET_ATEND_HASH        NULL,JANET_ATEND_NEXT
 #define JANET_ATEND_NEXT        NULL,JANET_ATEND_CALL
-#define JANET_ATEND_CALL
+#define JANET_ATEND_CALL        NULL,JANET_ATEND_LENGTH
+#define JANET_ATEND_LENGTH      NULL,JANET_ATEND_BYTES
+#define JANET_ATEND_BYTES
 
 struct JanetReg {
     const char *name;
@@ -1735,6 +1748,7 @@ JANET_API JanetModule janet_native(const char *name, JanetString *error);
 
 /* Marshaling */
 #define JANET_MARSHAL_UNSAFE 0x20000
+#define JANET_MARSHAL_NO_CYCLES 0x40000
 
 JANET_API void janet_marshal(
     JanetBuffer *buf,
