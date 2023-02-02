@@ -281,6 +281,9 @@ const App = (props: Props) => {
           currentEnvironment = null;
         } else {
           drawLines(ctx, origin, result.lines, Signal.get(pixelRatio));
+          // TODO: fade, maybe
+          // ctx.fillStyle = '#1d1f210a';
+          // ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
       }
     }));

@@ -133,3 +133,31 @@
 (def cos math/cos)
 (defn sin+ [x] (* 0.5 (+ 1 (math/sin x))))
 (defn cos+ [x] (* 0.5 (+ 1 (math/cos x))))
+
+(defn smoothstep [lo hi x]
+  (def t (clamp (/ (- x lo) (- hi lo)) 0 1))
+  (* t t (- 3 (* t 2))))
+
+(defn ss [x &opt from-lo from-hi to-lo to-hi]
+  (cond
+    (nil? from-lo) (smoothstep 0 1 x)
+    (nil? from-hi) (smoothstep (min 0 from-lo) (max 0 from-lo) x)
+    (nil? to-lo) (smoothstep (min from-lo from-hi) (max from-lo from-hi) x)
+    (nil? to-hi) (* (smoothstep (min from-lo from-hi) (max from-lo from-hi) x) to-lo)
+    (+ to-lo (* (smoothstep (min from-lo from-hi) (max from-lo from-hi) x) (- to-hi to-lo)))))
+
+(defn symmetric-random [x]
+  (- (* 2 x (math/random)) x))
+
+# TODO: could probably use a better name...
+(defn marsaglia-sample []
+   (var x 0)
+   (var y 0)
+   (var r2 0)
+   (while (or (= r2 0) (> r2 1))
+    (set x (symmetric-random 1))
+    (set y (symmetric-random 1))
+    (set r2 (+ (* x x) (* y y))))
+
+   (def mag (math/sqrt (/ (* -2 (math/log r2)) r2)))
+   [(* x mag) (* y mag)])
