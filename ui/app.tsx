@@ -1,4 +1,5 @@
 import type {Component, JSX} from 'solid-js';
+import {createEffect} from 'solid-js';
 import {batch, createMemo, createSelector, onMount, For, Switch, Match} from 'solid-js';
 import {Timer, LoopMode, TimerState} from './timer';
 import installCodeMirror from './editor';
@@ -11,6 +12,8 @@ import type {Module, Line, Point, Color, LineVector, Environment, Image} from 'w
 import OutputChannel from './output-channel';
 import RenderLoop from './render-loop';
 import type {Property} from 'csstype';
+import * as Storage from './storage';
+import {EditorState, Transaction} from '@codemirror/state';
 
 enum EvaluationState {
   Unknown,
@@ -97,7 +100,7 @@ const AnimationToolbar: Component<AnimationToolbarProps> = (props) => {
 const ResizableArea = (props: {ref: any}) => {
   let outputContainer: HTMLPreElement;
   let handlePointerAt = 0;
-  onMount(() => props.ref(outputContainer as HTMLElement));
+  onMount(() => { props.ref(outputContainer as HTMLElement); });
   return <>
     <div class="resize-handle output-resize-handle"
       title="double click to auto size"
@@ -145,12 +148,20 @@ function drawLines(ctx: CanvasRenderingContext2D, origin: Point, lines: LineVect
 }
 
 interface Props {
-  initialScript: string,
+  scripts: [string],
   focusable: boolean,
   canSave: boolean,
   runtime: Module,
   outputChannel: OutputChannel,
   size: {width: number, height: number},
+}
+
+interface StateCommandInput {state: EditorState, dispatch: (_: Transaction) => void}
+function setContent({dispatch, state}: StateCommandInput, content: string) {
+  dispatch(state.update({
+    changes: {from: 0, to: state.doc.length, insert: content},
+    selection: {anchor: content.length, head: content.length},
+  }));
 }
 
 const App = (props: Props) => {
@@ -163,9 +174,6 @@ const App = (props: Props) => {
   let runOutputContainer: HTMLPreElement;
   let ctx: CanvasRenderingContext2D;
 
-  let isGesturing = false;
-  let gestureEndedAt = 0;
-
   const canvasSize = Signal.create(props.size);
   const pixelRatio = Signal.create(window.devicePixelRatio);
   const imageRendering: Signal.T<Property.ImageRendering> = Signal.create('auto');
@@ -174,6 +182,9 @@ const App = (props: Props) => {
     const size = Signal.get(canvasSize);
     return {width: dpr * size.width, height: dpr * size.height};
   });
+
+  const scripts = props.scripts;
+  const activeScript = Signal.create(scripts[0]!);
 
   const scriptDirty = Signal.create(true);
   const evaluationState = Signal.create(EvaluationState.Unknown);
@@ -215,13 +226,34 @@ const App = (props: Props) => {
     }
   }
 
+  // activeScript
+
+  function save(scriptName: string, text: string) {
+    if (text.trim().length > 0) {
+      Storage.saveScript(scriptName, text);
+    } else {
+      Storage.deleteScript(scriptName);
+    }
+  }
+
   onMount(() => {
     intersectionObserver.observe(canvas);
     editor = installCodeMirror({
-      initialScript: props.initialScript,
       parent: editorContainer,
-      canSave: props.canSave,
+      save: (text) => {
+        save(Signal.get(activeScript), text);
+      },
       onChange: () => Signal.set(scriptDirty, true),
+    });
+
+    createEffect((oldScriptName: string | undefined) => {
+      if (oldScriptName != null) {
+        save(oldScriptName, editor.state.doc.toString());
+      }
+      const scriptName = Signal.get(activeScript);
+      const text = Storage.getScript(scriptName) ?? runtime.FS.readFile(`/examples/${scriptName}.janet`, {encoding: 'utf8'});
+      setContent(editor, text);
+      return scriptName;
     });
 
     ctx = canvas.getContext('2d')!;
@@ -333,7 +365,7 @@ const App = (props: Props) => {
 
   return <div class="bauble" style={{
     '--canvas-width': `${Signal.get(canvasSize).width}px`,
-    '--canvas-height': `${Signal.get(canvasSize).height}px`
+    '--canvas-height': `${Signal.get(canvasSize).height}px`,
   }}>
     <div class="canvas-container" ref={canvasContainer!}>
       <canvas
@@ -357,6 +389,18 @@ const App = (props: Props) => {
       <EditorToolbar state={Signal.get(evaluationState)} />
       <div class="editor-container" ref={editorContainer!} />
       <ResizableArea ref={evalOutputContainer!} />
+    </div>
+    <div class="sidebar">
+      <img id="logo" src="/logo.png" width="170" height="170" />
+      <ul class="file-select">
+        <For each={scripts}>{(script) =>
+          <li
+            onClick={() => Signal.set(activeScript, script)}
+            class={Signal.get(activeScript) === script ? "selected" : ""}>
+            {script}
+          </li>
+        }</For>
+      </ul>
     </div>
   </div>;
 };

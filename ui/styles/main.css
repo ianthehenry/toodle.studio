@@ -110,7 +110,7 @@ header {
   --text-color: #1d1f21;
   color: var(--text-color);
   background-color: #ffc6f9;
-  background-image: linear-gradient(to right, #ffc6f9, #fec4b2);
+  background-image: linear-gradient(to right, #c4feb2, #c6fff9);
   height: var(--header-height);
   line-height: var(--header-height);
   display: flex;
@@ -448,4 +448,34 @@ body.main-page .bauble {
   .bauble .resize-handle { flex-basis: 12px; }
   .bauble .canvas-resize-handle { background: var(--horizontal-grip); cursor: ns-resize; }
   .bauble .output-container { height: 1.5em; }
+}
+
+#logo {
+  width: 150px;
+  height: 150px;
+  border-radius: 170px;
+  border: solid 3px white;
+  box-sizing: border-box;
+}
+
+.file-select li {
+  padding: 0 1ch;
+  user-select: none;
+  cursor: pointer;
+}
+
+.file-select {
+  list-style: none;
+}
+
+.file-select .selected {
+  background-color: var(--line);
+  padding-right: 0;
+}
+
+.file-select .selected::before {
+  display: box;
+  float: right;
+  content: "❯";
+  margin-left: 1ch;
 }

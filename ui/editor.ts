@@ -1,34 +1,16 @@
 import {basicSetup} from 'codemirror';
 import {EditorView, keymap, ViewUpdate} from '@codemirror/view';
 import {indentWithTab} from '@codemirror/commands';
-import {syntaxTree, syntaxHighlighting, HighlightStyle} from '@codemirror/language';
-import {SyntaxNode} from '@lezer/common';
+import {syntaxHighlighting, HighlightStyle} from '@codemirror/language';
 import {tags} from '@lezer/highlight';
 import {janet} from 'codemirror-lang-janet';
-import {EditorState, EditorSelection, Transaction} from '@codemirror/state';
-import * as Storage from './storage';
-
-function save({state}: StateCommandInput) {
-  console.log('saving...');
-  const script = state.doc.toString();
-  if (script.trim().length > 0) {
-    Storage.saveScript(script);
-  } else {
-    Storage.deleteScript();
-  }
-  return true;
-}
-
-function isNumberNode(node: SyntaxNode) {
-  return node.type.name === 'Number';
-}
+import {EditorState, Transaction} from '@codemirror/state';
 
 interface StateCommandInput {state: EditorState, dispatch: (_: Transaction) => void}
 
 interface EditorOptions {
-  initialScript: string,
   parent: HTMLElement,
-  canSave: boolean,
+  save: ((text: string) => void) | null,
   onChange: (() => void),
 }
 
@@ -111,10 +93,15 @@ const theme = EditorView.theme({
   // TODO: style the "find/replace" box
 });
 
-export default function installCodeMirror({initialScript, parent, canSave, onChange}: EditorOptions): EditorView {
+export default function installCodeMirror({parent, save, onChange}: EditorOptions): EditorView {
   const keyBindings = [indentWithTab];
-  if (canSave) {
-    keyBindings.push({ key: "Mod-s", run: save });
+  if (save != null) {
+    keyBindings.push({ key: "Mod-s", run: ({state}: StateCommandInput) => {
+      console.log('saving...');
+      save(state.doc.toString());
+      return true;
+    }
+   });
   }
 
   const editor = new EditorView({
@@ -131,26 +118,24 @@ export default function installCodeMirror({initialScript, parent, canSave, onCha
       syntaxHighlighting(highlightStyle),
     ],
     parent: parent,
-    doc: initialScript,
   });
 
-  if (canSave) {
+  if (save != null) {
+    const saveText = () => save(editor.state.doc.toString());
     setInterval(function() {
-      save(editor);
+      saveText();
     }, 30 * 1000);
-    document.addEventListener('pagehide', () => {
-      save(editor);
-    });
+    document.addEventListener('pagehide', saveText);
     let savedBefore = false;
     // iOS Safari doesn't support beforeunload,
     // but it does support unload.
     window.addEventListener('beforeunload', () => {
       savedBefore = true;
-      save(editor);
+      saveText();
     });
     window.addEventListener('unload', () => {
       if (!savedBefore) {
-        save(editor);
+        saveText();
       }
     });
   }

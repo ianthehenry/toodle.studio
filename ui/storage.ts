@@ -1,13 +1,13 @@
-const LOCAL_STORAGE_KEY = "script";
+const LOCAL_STORAGE_KEY = (name: string) => `file:${name}`;
 
-export function saveScript(value: string) {
-  localStorage.setItem(LOCAL_STORAGE_KEY, value);
+export function saveScript(name: string, value: string) {
+  localStorage.setItem(LOCAL_STORAGE_KEY(name), value);
 }
 
-export function deleteScript() {
-  localStorage.removeItem(LOCAL_STORAGE_KEY);
+export function deleteScript(name: string) {
+  localStorage.removeItem(LOCAL_STORAGE_KEY(name));
 }
 
-export function getScript(): string | null {
-  return localStorage.getItem(LOCAL_STORAGE_KEY);
+export function getScript(name: string): string | null {
+  return localStorage.getItem(LOCAL_STORAGE_KEY(name));
 }
