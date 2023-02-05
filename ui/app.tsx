@@ -368,6 +368,7 @@ const App = (props: Props) => {
           Signal.set(evaluationState, EvaluationState.EvaluationError);
           console.error(result.error);
         } else {
+          Signal.set(evaluationState, EvaluationState.Success);
           nextImage = result.image;
         }
         outputChannel.target = null;
