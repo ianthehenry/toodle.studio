@@ -15,18 +15,22 @@ document.addEventListener("DOMContentLoaded", (_) => {
     },
   };
 
-  InitializeWasm(opts).then((runtime: Module) => {
-    const scripts = runtime.FS
-      .readdir('/examples')
-      .filter((name: string) => !name.startsWith('.'))
-      .map((name: string) => name.replace(/\.janet$/, ''));
-    renderSolid(() => <App
-      runtime={runtime}
-      outputChannel={outputChannel}
-      scripts={scripts}
-      focusable={false}
-      canSave={true}
-      size={{width: 512, height: 512}}
-    />, document.body);
-  }).catch(console.error);
+  switch (window.location.pathname) {
+  case '/':
+    InitializeWasm(opts).then((runtime: Module) => {
+      const scripts = runtime.FS
+        .readdir('/examples')
+        .filter((name: string) => !name.startsWith('.'))
+        .map((name: string) => name.replace(/\.janet$/, ''));
+      renderSolid(() => <App
+        runtime={runtime}
+        outputChannel={outputChannel}
+        scripts={scripts}
+        focusable={false}
+        canSave={true}
+        size={{width: 512, height: 512}}
+      />, document.body);
+    }).catch(console.error);
+    break;
+  }
 });

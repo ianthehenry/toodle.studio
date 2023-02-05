@@ -1,4 +1,4 @@
-:root {
+/*:root {
   --foreground: #4d4d4c;
   --background: #ffffff;
   --selection: #d6d6d6;
@@ -13,8 +13,8 @@
   --purple: #8959a8;
   --window: #efefef;
 }
-
-@media (prefers-color-scheme: dark) {
+*/
+/*@media (prefers-color-scheme: dark) {*/
   :root {
     --foreground: #c5c8c6;
     --background: #1d1f21;
@@ -30,7 +30,7 @@
     --purple: #b294bb;
     --window: #4d5057;
   }
-}
+/*}*/
 
 :root {
   --toolbar-fg: var(--blue);
@@ -104,53 +104,36 @@ main > *+div {
   margin-top: 1em;
 }
 
-header {
-  --header-height: 40px;
-  --header-padding: 0.5em;
-  --text-color: #1d1f21;
-  color: var(--text-color);
-  background-color: #ffc6f9;
-  background-image: linear-gradient(to right, #c4feb2, #c6fff9);
-  height: var(--header-height);
-  line-height: var(--header-height);
-  display: flex;
-}
-
-header .title, header .spacer {
-  flex: 1;
-}
-
-header a {
+.sidebar a {
   text-decoration: none;
 }
-header a.text-link {
-  padding: 0 var(--header-padding);
-}
 
-header a,
-header a:visited,
-header a:active {
+.sidebar a,
+.sidebar a:visited,
+.sidebar a:active {
   color: var(--text-color);
 }
 
-header svg {
-  fill: var(--text-color);
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  line-height: 2em;
+}
+.sidebar > ul {
+  margin-bottom: auto;
+}
+.sidebar .text-link {
+  padding: 0 1ch;
+  text-align: center;
+}
+.sidebar svg {
+  fill: var(--foreground);
   width: 24px;
   height: 24px;
 }
-
-header > :first-child {
-  padding-left: var(--header-padding);
-}
-header > :last-child {
-  padding-right: var(--header-padding);
-}
-header .image-link {
-  display: flex;
-  width: var(--header-height);
-  height: var(--header-height);
-  justify-content: center;
-  align-items: center;
+.sidebar .image-link {
+  margin-top: 0.5em;
+  align-self: center;
 }
 
 .bauble-placeholder {
@@ -454,8 +437,18 @@ body.main-page .bauble {
   width: 150px;
   height: 150px;
   border-radius: 170px;
-  border: solid 3px white;
+  border: solid 3px var(--comment);
   box-sizing: border-box;
+}
+
+.sidebar canvas {
+  width: 170px;
+  height: 170px;
+}
+
+.sidebar .toolbar .title {
+  flex-grow: 1;
+  text-align: center;
 }
 
 .file-select li {

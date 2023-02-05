@@ -6,7 +6,6 @@ printf '<!doctype html>
 <html>
 %s
 <body class="main-page">
-  %s
 </body>
 </html>
-' "$(./head "$@")" "$(./header)"
+' "$(./head "$@")"

@@ -13,6 +13,8 @@ import OutputChannel from './output-channel';
 import RenderLoop from './render-loop';
 import type {Property} from 'csstype';
 import * as Storage from './storage';
+import logoShader from './logo-shader';
+import Renderer from './renderer';
 import {EditorState, Transaction} from '@codemirror/state';
 
 enum EvaluationState {
@@ -132,6 +134,38 @@ const ResizableArea = (props: {ref: any}) => {
   </>;
 };
 
+interface SidebarProps {
+  scripts: [string],
+  activeScript: Signal.T<string>,
+  pixelRatio: Signal.T<number>,
+  ref: any,
+  onLogoClick: (() => void),
+};
+
+const Sidebar = (props: SidebarProps) => {
+  const {scripts, activeScript, pixelRatio} = props;
+  return <div class="sidebar">
+    <div class="toolbar">
+      <a class="title" href="/">Toodle Studio</a>
+    </div>
+    <canvas
+      width={170 * Signal.get(pixelRatio)}
+      height={170 * Signal.get(pixelRatio)}
+      ref={props.ref}
+      onClick={props.onLogoClick} />
+    <ul class="file-select">
+      <For each={scripts}>{(script) =>
+        <li
+          onClick={() => Signal.set(activeScript, script)}
+          class={Signal.get(activeScript) === script ? "selected" : ""}>
+          {script}
+        </li>
+      }</For>
+    </ul>
+    <a class="image-link" target="_blank" href="https://github.com/ianthehenry/toodle.studio"><svg><use xlink:href="/icons.svg#github"/></svg></a>
+  </div>
+}
+
 const colorToString = ({r, g, b, a}: Color) => `rgba(${255 * r}, ${255 * g}, ${255 * b}, ${a})`;
 
 function drawLines(ctx: CanvasRenderingContext2D, origin: Point, lines: LineVector, pixelRatio: number) {
@@ -169,12 +203,14 @@ const App = (props: Props) => {
   let canvasContainer: HTMLDivElement;
   let editorContainer: HTMLDivElement;
   let canvas: HTMLCanvasElement;
+  let logoCanvas: HTMLCanvasElement;
   let editor: EditorView;
   let evalOutputContainer: HTMLElement;
   let runOutputContainer: HTMLPreElement;
   let ctx: CanvasRenderingContext2D;
 
   const canvasSize = Signal.create(props.size);
+  // const pixelRatio = Signal.create(window.devicePixelRatio);
   const pixelRatio = Signal.create(window.devicePixelRatio);
   const imageRendering: Signal.T<Property.ImageRendering> = Signal.create('auto');
   const canvasResolution = createMemo(() => {
@@ -191,6 +227,8 @@ const App = (props: Props) => {
   const isVisible = Signal.create(false);
 
   const timer = new Timer();
+  const logoTimer = new Timer();
+  const logoAnimating = Signal.create(Storage.getAnimatedLogo() ?? true);
 
   const intersectionObserver = new IntersectionObserver((entries) => {
     for (const entry of entries) {
@@ -236,6 +274,8 @@ const App = (props: Props) => {
     }
   }
 
+  const mouse = Signal.create({x: 1, y: -0.5});
+
   onMount(() => {
     intersectionObserver.observe(canvas);
     editor = installCodeMirror({
@@ -246,6 +286,16 @@ const App = (props: Props) => {
       onChange: () => Signal.set(scriptDirty, true),
     });
 
+    window.addEventListener('mousemove', (e) => {
+      const canvasRect = logoCanvas.getBoundingClientRect();
+      const x = e.clientX - canvasRect.left;
+      const y = e.clientY - canvasRect.top;
+      Signal.set(mouse, {
+        x: x / canvasRect.width - 0.5,
+        y: 0.5 - y / canvasRect.height
+      });
+    });
+
     createEffect((oldScriptName: string | undefined) => {
       if (oldScriptName != null) {
         save(oldScriptName, editor.state.doc.toString());
@@ -254,6 +304,34 @@ const App = (props: Props) => {
       const text = Storage.getScript(scriptName) ?? runtime.FS.readFile(`/examples/${scriptName}.janet`, {encoding: 'utf8'});
       setContent(editor, text);
       return scriptName;
+    });
+
+    const renderer = new Renderer(
+      logoCanvas,
+      Signal.getter(logoTimer.t),
+      Signal.getter(Signal.create({
+        width: logoCanvas.width,
+        height: logoCanvas.height,
+      })),
+      Signal.getter(mouse),
+    );
+    renderer.recompileShader(logoShader);
+    const logoRenderLoop = new RenderLoop((elapsed) => batch(() => {
+      renderer.draw();
+      logoTimer.tick(elapsed, true);
+      if (Signal.get(logoAnimating)) {
+        logoRenderLoop.schedule();
+      }
+    }));
+    // even if we aren't animating, we always want to draw it once
+    logoRenderLoop.schedule();
+
+    createEffect(() => {
+      const animating = Signal.get(logoAnimating);
+      Storage.saveAnimatedLogo(animating);
+      if (animating) {
+        logoRenderLoop.schedule();
+      }
     });
 
     ctx = canvas.getContext('2d')!;
@@ -368,6 +446,7 @@ const App = (props: Props) => {
     '--canvas-height': `${Signal.get(canvasSize).height}px`,
   }}>
     <div class="canvas-container" ref={canvasContainer!}>
+      <AnimationToolbar timer={timer} />
       <canvas
         ref={canvas!}
         class="render-target"
@@ -376,7 +455,6 @@ const App = (props: Props) => {
         height={canvasResolution().height}
         tabindex={props.focusable ? 0 : undefined}
       />
-      <AnimationToolbar timer={timer} />
       <pre class="runtime-output-container" ref={runOutputContainer!}></pre>
     </div>
     <div class="resize-handle canvas-resize-handle"
@@ -390,18 +468,12 @@ const App = (props: Props) => {
       <div class="editor-container" ref={editorContainer!} />
       <ResizableArea ref={evalOutputContainer!} />
     </div>
-    <div class="sidebar">
-      <img id="logo" src="/logo.png" width="170" height="170" />
-      <ul class="file-select">
-        <For each={scripts}>{(script) =>
-          <li
-            onClick={() => Signal.set(activeScript, script)}
-            class={Signal.get(activeScript) === script ? "selected" : ""}>
-            {script}
-          </li>
-        }</For>
-      </ul>
-    </div>
+    <Sidebar
+      scripts={scripts}
+      activeScript={activeScript}
+      ref={logoCanvas!}
+      pixelRatio={pixelRatio}
+      onLogoClick={()=>Signal.set(logoAnimating, !Signal.get(logoAnimating))} />
   </div>;
 };
 export default App;

@@ -10,8 +10,7 @@ mkdir -p public
 
 redo-ifchange $(find ui -path '*/node_modules' -prune -o -type f)
 
-ln -f ui/assets/icons.svg public/icons.svg
-ln -f ui/assets/logo.png public/logo.png
+ln -f ui/assets/* public/
 ln -f build/main.css public/$css
 ln -f build/all.js public/$js
 

@@ -9,10 +9,9 @@ printf '<!doctype html>
 <html>
 %s
 <body>
-  %s
   <main>
     %s
   </main>
 </body>
 </html>
-' "$($root/head "$@")" "$($root/header)" "$($invocation)"
+' "$($root/head "$@")" "$($invocation)"
