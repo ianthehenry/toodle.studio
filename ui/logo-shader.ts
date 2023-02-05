@@ -90,7 +90,7 @@ uniform vec3 right_eye_target;
 
 out vec4 frag_color;
 
-const int MAX_STEPS = 256;
+const int MAX_STEPS = 64;
 const float MINIMUM_HIT_DISTANCE = 0.1;
 const float NORMAL_OFFSET = 0.005;
 const float MAXIMUM_TRACE_DISTANCE = 64.0 * 1024.0;
@@ -795,40 +795,19 @@ float nearest_distance(vec3 p) {
 
 vec3 calculate_normal(vec3 p) {
   const vec3 step = vec3(NORMAL_OFFSET, 0.0, 0.0);
+  float x = nearest_distance(p);
 
   return normalize(vec3(
-    nearest_distance(p + step.xyy) - nearest_distance(p - step.xyy),
-    nearest_distance(p + step.yxy) - nearest_distance(p - step.yxy),
-    nearest_distance(p + step.yyx) - nearest_distance(p - step.yyx)
+    x - nearest_distance(p - step.xyy),
+    x - nearest_distance(p - step.yxy),
+    x - nearest_distance(p - step.yyx)
   ));
 }
 
-float calculate_occlusion(vec3 p, vec3 normal) {
-  const int step_count = 10;
-  const float max_distance = 10.0;
-  const float step_size = max_distance / float(step_count);
-  float baseline = nearest_distance(p);
-  float occlusion = 0.0;
-  // TODO: this does some good to reduce the problem where a "neck" will
-  // have band of completely unoccluded space, but it introduces some
-  // terrible banding artifacts on flat surfaces.
-  // vec3 sine_noise = sin(p * 43758.5453);
-  // vec3 rand = sign(sine_noise) * fract(sine_noise);
-  // vec3 step = normalize(normal + rand) * step_size;
-  vec3 step = normal * step_size;
-  for (int i = 1; i <= step_count; i++) {
-    float expected_distance = baseline + float(i) * step_size;
-    float actual_distance = max(nearest_distance(p + float(i) * step), 0.0);
-    occlusion += actual_distance / expected_distance;
-  }
-  occlusion /= float(step_count);
-  return clamp(occlusion, 0.0, 1.0);
-}
-
-vec3 march(vec3 ray_origin, vec3 ray_direction, out int steps) {
+vec3 march(vec3 ray_origin, vec3 ray_direction) {
   float distance = 0.0;
 
-  for (steps = 0; steps < MAX_STEPS; steps++) {
+  for (int steps = 0; steps < MAX_STEPS; steps++) {
     vec3 p = ray_origin + distance * ray_direction;
 
     float nearest = nearest_distance(p);
@@ -870,10 +849,9 @@ void main() {
 
   vec2 local_coord = gl_FragCoord.xy - viewport.xy;
   vec2 resolution = viewport.zw;
-  vec3 dir = camera_matrix * perspective(30.0, resolution, local_coord);
+  vec3 dir = camera_matrix * perspective(27.0, resolution, local_coord);
 
-  int steps;
-  vec3 hit = march(camera_origin, dir, steps);
+  vec3 hit = march(camera_origin, dir);
 
   vec3 color;
   float depth = distance(camera_origin, hit);
@@ -888,12 +866,12 @@ void main() {
 
   if (depth >= MAXIMUM_TRACE_DISTANCE || (hit.x+hit.z < 10.0)) {
     float r = length(local_coord/resolution - vec2(0.5));
-    if (r > 0.38) {
+    if (r > 0.45) {
       color = vec3(0.6, 0.8, 0.6);
       alpha = 1.0;
     }
 
-    if (r > 0.4) {
+    if (r > 0.47) {
       alpha = 0.0;
     }
   }

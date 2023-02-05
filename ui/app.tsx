@@ -220,7 +220,10 @@ const App = (props: Props) => {
   });
 
   const scripts = props.scripts;
-  const activeScript = Signal.create(scripts[0]!);
+  const activeScript = Signal.create(Storage.getSelected() ?? scripts[0]!);
+  createEffect(() => {
+    Storage.saveSelected(Signal.get(activeScript));
+  });
 
   const scriptDirty = Signal.create(true);
   const evaluationState = Signal.create(EvaluationState.Unknown);

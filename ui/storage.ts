@@ -1,5 +1,6 @@
 const LOCAL_STORAGE_KEY = (name: string) => `file:${name}`;
 const ANIMATED_LOGO_KEY = 'enable-logo-animation';
+const SELECTION_KEY = 'selected-script';
 
 export function saveScript(name: string, value: string) {
   localStorage.setItem(LOCAL_STORAGE_KEY(name), value);
@@ -23,4 +24,11 @@ export function getAnimatedLogo(): boolean | null {
   } else {
     return JSON.parse(result);
   }
+}
+
+export function saveSelected(value: string) {
+  return localStorage.setItem(SELECTION_KEY, value);
+}
+export function getSelected(): string | null {
+  return localStorage.getItem(SELECTION_KEY);
 }
