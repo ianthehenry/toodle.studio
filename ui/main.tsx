@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
         .readdir('/examples')
         .filter((name: string) => !name.startsWith('.'))
         .map((name: string) => name.replace(/\.janet$/, ''));
+      scripts.sort();
       renderSolid(() => <App
         runtime={runtime}
         outputChannel={outputChannel}
