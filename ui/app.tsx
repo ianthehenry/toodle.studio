@@ -159,29 +159,29 @@ const ResizableArea = (props: {ref: any}) => {
 
 interface SidebarProps {
   scripts: [string],
-  activeScript: Signal.T<string>,
-  pixelRatio: Signal.T<number>,
+  activeScript: string,
+  pixelRatio: number,
   ref: any,
   onLogoClick: (() => void),
+  onScriptClick: ((name: string) => void),
 };
 
 const Sidebar = (props: SidebarProps) => {
-  const {scripts, activeScript, pixelRatio} = props;
   return <div class="sidebar">
     <div class="toolbar">
       <a class="title" href="/">Toodle Studio</a>
     </div>
     <canvas
-      width={170 * Signal.get(pixelRatio)}
-      height={170 * Signal.get(pixelRatio)}
+      width={170 * props.pixelRatio}
+      height={170 * props.pixelRatio}
       ref={props.ref}
       title="Click to pause.\n\nThis animated toodle\nis brought to you by\nhttps://bauble.studio --\na few lines of code to\nmake animated 3D art!"
       onClick={props.onLogoClick} />
     <ul class="file-select">
-      <For each={scripts}>{(script) =>
+      <For each={props.scripts}>{(script) =>
         <li
-          onClick={() => Signal.set(activeScript, script)}
-          class={Signal.get(activeScript) === script ? "selected" : ""}>
+          onClick={() => { props.onScriptClick(script); }}
+          class={props.activeScript === script ? "selected" : ""}>
           {script}
         </li>
       }</For>
@@ -531,9 +531,14 @@ const App = (props: Props) => {
     </div>
     <Sidebar
       scripts={scripts}
-      activeScript={activeScript}
+      activeScript={Signal.get(activeScript)}
+      onScriptClick={(scriptName) => {
+        Signal.set(activeScript, scriptName);
+        Signal.set(currentImage, null);
+        Signal.set(currentEnvironment, null);
+      }}
       ref={logoCanvas!}
-      pixelRatio={pixelRatio}
+      pixelRatio={Signal.get(pixelRatio)}
       onLogoClick={()=>Signal.set(logoAnimating, !Signal.get(logoAnimating))} />
   </div>;
 };
