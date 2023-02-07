@@ -533,9 +533,11 @@ const App = (props: Props) => {
       scripts={scripts}
       activeScript={Signal.get(activeScript)}
       onScriptClick={(scriptName) => {
-        Signal.set(activeScript, scriptName);
-        Signal.set(currentImage, null);
-        Signal.set(currentEnvironment, null);
+        if (scriptName !== Signal.get(activeScript)) {
+          Signal.set(activeScript, scriptName);
+          Signal.set(currentImage, null);
+          Signal.set(currentEnvironment, null);
+        }
       }}
       ref={logoCanvas!}
       pixelRatio={Signal.get(pixelRatio)}
