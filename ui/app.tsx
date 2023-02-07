@@ -30,7 +30,7 @@ const Icon: Component<{name: string}> = (props) => {
 interface ChoiceDescription<T> {
   title: string,
   value: T,
-  icon: string,
+  text: string,
 }
 
 function choices<T extends number | string>(
@@ -41,7 +41,7 @@ function choices<T extends number | string>(
   const setter = Signal.setter(signal);
 
   return <fieldset>
-    <For each={choices}>{ ({title, value, icon}) =>
+    <For each={choices}>{ ({title, value, text}) =>
       <label title={title}>
         <input
           type="radio"
@@ -49,7 +49,7 @@ function choices<T extends number | string>(
           value={value}
           checked={isSelected(value)}
           onChange={[setter, value]} />
-        <Icon name={icon} />
+        <span>{text}</span>
       </label>
     }</For>
   </fieldset>;
@@ -102,6 +102,7 @@ interface AnimationToolbarProps {
   timer: Timer,
   restartEnabled: boolean,
   onRestart: () => void,
+  playbackSpeed: Signal.T<number>,
 }
 const AnimationToolbar: Component<AnimationToolbarProps> = (props) => {
   return <div class="toolbar">
@@ -116,8 +117,14 @@ const AnimationToolbar: Component<AnimationToolbarProps> = (props) => {
       onClick={() => props.timer.playPause()}>
       <Icon name={Signal.get(props.timer.state) === TimerState.Playing ? "pause" : "play"} />
     </button>
-    <button title="Stop" onClick={() => props.timer.stop()}><Icon name="stop" /></button>
     <span title="Current timestamp" class="timestamp">{Signal.get(props.timer.t).toFixed(2)}</span>
+    <div class="spacer"></div>
+    {choices(props.playbackSpeed, [
+      {text: '1x', value: 1, title: "Normal"},
+      {text: '2x', value: 2, title: "Fast"},
+      {text: '4x', value: 4, title: "Faster"},
+      {text: '8x', value: 8, title: "Fastest"},
+    ])}
   </div>;
 };
 
@@ -242,6 +249,8 @@ const App = (props: Props) => {
     const size = Signal.get(canvasSize);
     return {width: dpr * size.width, height: dpr * size.height};
   });
+
+  const playbackSpeed = Signal.create(1);
 
   const scripts = props.scripts;
   const activeScript = Signal.create(Storage.getSelected() ?? scripts[0]!);
@@ -433,8 +442,8 @@ const App = (props: Props) => {
         restart();
       }
 
-      const currentEnvironment_ = Signal.get(currentEnvironment);
-      if (currentEnvironment_ != null) {
+      for (let i = 0; Signal.get(currentEnvironment) != null && i < Signal.get(playbackSpeed); i++) {
+        let currentEnvironment_ = Signal.get(currentEnvironment)!;
         const resolution = canvasResolution();
         const origin = {x: resolution.width * 0.5, y: resolution.height * 0.5};
         outputChannel.target = runOutputContainer;
@@ -503,7 +512,8 @@ const App = (props: Props) => {
       <AnimationToolbar
         timer={timer}
         restartEnabled={Signal.get(currentImage) != null}
-        onRestart={restart}/>
+        onRestart={restart}
+        playbackSpeed={playbackSpeed}/>
       <canvas
         ref={canvas!}
         class="render-target"

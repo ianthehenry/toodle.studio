@@ -34,6 +34,7 @@
 
 :root {
   --toolbar-fg: var(--blue);
+  --toolbar-disabled: var(--comment);
   --toolbar-bg: var(--window);
 }
 
@@ -349,10 +350,12 @@ body.main-page .bauble {
   min-width: var(--control-height);
   border: none;
   background-color: initial;
+  color: var(--toolbar-fg);
 }
 
 .toolbar button:not(:enabled) {
-  fill: var(--comment);
+  fill: var(--toolbar-disabled);
+  color: var(--toolbar-disabled);
 }
 .toolbar button:enabled {
   cursor: pointer;
@@ -422,9 +425,14 @@ body.main-page .bauble {
 }
 .toolbar .indicator svg,
 .toolbar fieldset label svg,
+.toolbar fieldset label span,
 .toolbar button svg {
   width: 20px;
   height: 20px;
+}
+.toolbar fieldset label span {
+  line-height: 20px;
+  font-size: 75%;
 }
 
 .bauble canvas {
