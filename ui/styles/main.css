@@ -348,8 +348,14 @@ body.main-page .bauble {
 .toolbar button {
   min-width: var(--control-height);
   border: none;
-  cursor: pointer;
   background-color: initial;
+}
+
+.toolbar button:not(:enabled) {
+  fill: var(--comment);
+}
+.toolbar button:enabled {
+  cursor: pointer;
 }
 
 .toolbar fieldset label {
@@ -376,13 +382,13 @@ body.main-page .bauble {
   background-color: rgba(0, 0, 0, 0.15);
 }
 
-.toolbar button:hover svg,
+.toolbar button:enabled:hover svg,
 .toolbar fieldset label:hover input[type=radio] + span,
 .toolbar fieldset label:hover input[type=radio] + svg {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
-.toolbar button:active svg,
+.toolbar button:enabled:active svg,
 .toolbar fieldset label:hover input[type=radio]:checked + span,
 .toolbar fieldset label:hover input[type=radio]:checked + svg {
   background-color: rgba(0, 0, 0, 0.2);

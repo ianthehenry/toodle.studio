@@ -12,6 +12,7 @@ interface EditorOptions {
   parent: HTMLElement,
   save: ((text: string) => void) | null,
   onChange: (() => void),
+  onRun: (() => void),
 }
 
 const highlightStyle = HighlightStyle.define([
@@ -93,8 +94,17 @@ const theme = EditorView.theme({
   // TODO: style the "find/replace" box
 });
 
-export default function installCodeMirror({parent, save, onChange}: EditorOptions): EditorView {
-  const keyBindings = [indentWithTab];
+export default function installCodeMirror({parent, save, onChange, onRun}: EditorOptions): EditorView {
+  const keyBindings = [
+    indentWithTab,
+    {
+      key: "Mod-Enter",
+      run: ({state}: StateCommandInput) => {
+        onRun();
+        return true;
+      }
+    }
+  ];
   if (save != null) {
     keyBindings.push({ key: "Mod-s", run: ({state}: StateCommandInput) => {
       console.log('saving...');
@@ -106,9 +116,9 @@ export default function installCodeMirror({parent, save, onChange}: EditorOption
 
   const editor = new EditorView({
     extensions: [
+      keymap.of(keyBindings),
       basicSetup,
       janet(),
-      keymap.of(keyBindings),
       EditorView.updateListener.of(function(viewUpdate: ViewUpdate) {
         if (viewUpdate.docChanged) {
           onChange();

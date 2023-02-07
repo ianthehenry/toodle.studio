@@ -55,7 +55,13 @@ function choices<T extends number | string>(
   </fieldset>;
 }
 
-const EditorToolbar: Component<{state: EvaluationState}> = (props) => {
+interface EditorToolbarProps {
+  state: EvaluationState,
+  loadEnabled: boolean,
+  onClickLoad: () => void,
+}
+
+const EditorToolbar: Component<EditorToolbarProps> = (props) => {
   return <div class="toolbar">
     <div class="spacer"></div>
     <Switch>
@@ -80,14 +86,31 @@ const EditorToolbar: Component<{state: EvaluationState}> = (props) => {
         </div>
       </Match>
     </Switch>
+    <button
+      title={
+        "Load Program\n" +
+        (window.navigator.platform.startsWith('Mac') ?
+        "⌘ Enter" : "Ctrl-Enter")}
+      disabled={!props.loadEnabled}
+      onClick={props.onClickLoad}>
+      <Icon name="box-arrow-right" />
+    </button>
   </div>;
 };
 
 interface AnimationToolbarProps {
   timer: Timer,
+  restartEnabled: boolean,
+  onRestart: () => void,
 }
 const AnimationToolbar: Component<AnimationToolbarProps> = (props) => {
   return <div class="toolbar">
+    <button
+      title="Restart"
+      disabled={!props.restartEnabled}
+      onClick={props.onRestart}>
+      <Icon name="arrow-counterclockwise" />
+    </button>
     <button
       title={Signal.get(props.timer.state) === TimerState.Playing ? "Pause" : "Play"}
       onClick={() => props.timer.playPause()}>
@@ -152,6 +175,7 @@ const Sidebar = (props: SidebarProps) => {
       width={170 * Signal.get(pixelRatio)}
       height={170 * Signal.get(pixelRatio)}
       ref={props.ref}
+      title="Click to pause.\n\nThis animated toodle\nis brought to you by\nhttps://bauble.studio --\na few lines of code to\nmake animated 3D art!"
       onClick={props.onLogoClick} />
     <ul class="file-select">
       <For each={scripts}>{(script) =>
@@ -239,22 +263,50 @@ const App = (props: Props) => {
     }
   });
 
-  let currentImage: Image | null = null;
-  let nextImage: Image | null = null;
-  let currentEnvironment: Environment | null = null;
+  let nextImage: Signal.T<Image | null> = Signal.create(null);
+  let currentImage: Signal.T<Image | null> = Signal.create(null);
+  let currentEnvironment: Signal.T<Environment | null> = Signal.create(null);
+
+  // On memory management:
+  //
+  // We always set nextImage first, and it begins a retain count of one, so we
+  // don't retain it again.
+  //
+  // We then may also set it to currentImage. But we do retain that, because
+  // it didn't come directly from wasm.
+  createEffect((old: Image | null) => {
+    if (old != null) {
+      runtime.release_image(old);
+    }
+    return Signal.get(nextImage);
+  }, null);
+
+  createEffect((old: Image | null) => {
+    const new_ = Signal.get(currentImage);
+    const changed = old !== new_;
+    if (changed && old != null) {
+      runtime.release_image(old);
+    }
+    if (changed && new_ != null) {
+      runtime.retain_image(new_);
+    }
+    return new_;
+  }, null);
+
+  createEffect((old: Environment | null) => {
+    if (old != null) {
+      runtime.release_environment(old);
+    }
+    return Signal.get(currentEnvironment);
+  }, null);
 
   function loadNext() {
-    if (nextImage != null) {
-      if (currentImage != null) {
-        runtime.release_image(currentImage);
-      }
-      if (currentEnvironment != null) {
-        runtime.release_environment(currentEnvironment);
-      }
+    const nextImage_ = Signal.get(nextImage);
+    if (nextImage_ != null) {
+      Signal.set(currentImage, nextImage_);
 
-      currentImage = nextImage;
-      currentEnvironment = null;
-      runtime.retain_image(currentImage);
+      // this isn't actually sufficient to restart but whatever
+      Signal.set(currentEnvironment, null);
       runOutputContainer.innerHTML = '';
     }
   }
@@ -262,12 +314,11 @@ const App = (props: Props) => {
   function restart() {
     ctx.fillStyle = '#1d1f21';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (currentImage != null) {
-      currentEnvironment = runtime.toodle_start(currentImage).environment;
+    const currentImage_ = Signal.get(currentImage);
+    if (currentImage_ != null) {
+      Signal.set(currentEnvironment, runtime.toodle_start(currentImage_).environment);
     }
   }
-
-  // activeScript
 
   function save(scriptName: string, text: string) {
     if (text.trim().length > 0) {
@@ -287,6 +338,7 @@ const App = (props: Props) => {
         save(Signal.get(activeScript), text);
       },
       onChange: () => Signal.set(scriptDirty, true),
+      onRun: loadNext
     });
 
     window.addEventListener('mousemove', (e) => {
@@ -363,36 +415,34 @@ const App = (props: Props) => {
         const result = runtime.toodle_compile(editor.state.doc.toString());
         Signal.set(scriptDirty, false);
 
-        if (nextImage != null) {
-          runtime.release_image(nextImage);
-        }
         if (result.isError) {
-          nextImage = null;
+          Signal.set(nextImage, null);
           Signal.set(evaluationState, EvaluationState.EvaluationError);
           console.error(result.error);
         } else {
           Signal.set(evaluationState, EvaluationState.Success);
-          nextImage = result.image;
+          Signal.set(nextImage, result.image);
         }
         outputChannel.target = null;
       }
 
-      if (currentImage == null && nextImage != null) {
+      if (Signal.get(currentImage) == null && Signal.get(nextImage) != null) {
         loadNext();
       }
-      if (currentEnvironment == null) {
+      if (Signal.get(currentEnvironment) == null) {
         restart();
       }
 
-      if (currentEnvironment != null) {
+      const currentEnvironment_ = Signal.get(currentEnvironment);
+      if (currentEnvironment_ != null) {
         const resolution = canvasResolution();
         const origin = {x: resolution.width * 0.5, y: resolution.height * 0.5};
         outputChannel.target = runOutputContainer;
-        const result = runtime.toodle_continue(currentEnvironment);
+        const result = runtime.toodle_continue(currentEnvironment_);
         if (result.isError) {
           Signal.set(evaluationState, EvaluationState.EvaluationError);
           console.error(result.error);
-          currentEnvironment = null;
+          Signal.set(currentEnvironment, null);
         } else {
           drawLines(ctx, origin, result.lines, Signal.get(pixelRatio));
           // TODO: fade, maybe
@@ -450,7 +500,10 @@ const App = (props: Props) => {
     '--canvas-height': `${Signal.get(canvasSize).height}px`,
   }}>
     <div class="canvas-container" ref={canvasContainer!}>
-      <AnimationToolbar timer={timer} />
+      <AnimationToolbar
+        timer={timer}
+        restartEnabled={Signal.get(currentImage) != null}
+        onRestart={restart}/>
       <canvas
         ref={canvas!}
         class="render-target"
@@ -468,7 +521,11 @@ const App = (props: Props) => {
       onDblClick={onHandleDblClick}
     />
     <div class="code-container" ref={codeContainer!}>
-      <EditorToolbar state={Signal.get(evaluationState)} />
+      <EditorToolbar
+        state={Signal.get(evaluationState)}
+        loadEnabled={Signal.get(nextImage) != null}
+        onClickLoad={loadNext}
+        />
       <div class="editor-container" ref={editorContainer!} />
       <ResizableArea ref={evalOutputContainer!} />
     </div>
