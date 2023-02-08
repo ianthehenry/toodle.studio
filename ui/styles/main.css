@@ -274,7 +274,8 @@ body.main-page .bauble {
   max-height: 25%;
 }
 
-.bauble .output-container .err {
+.bauble .output-container .err,
+.bauble .runtime-output-container .err {
   color: var(--red);
 }
 

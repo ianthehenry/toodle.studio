@@ -309,23 +309,21 @@ const App = (props: Props) => {
     return Signal.get(currentEnvironment);
   }, null);
 
-  function loadNext() {
-    const nextImage_ = Signal.get(nextImage);
-    if (nextImage_ != null) {
-      Signal.set(currentImage, nextImage_);
-
-      // this isn't actually sufficient to restart but whatever
-      Signal.set(currentEnvironment, null);
-      runOutputContainer.innerHTML = '';
-    }
-  }
-
   function restart() {
     ctx.fillStyle = '#1d1f21';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     const currentImage_ = Signal.get(currentImage);
     if (currentImage_ != null) {
       Signal.set(currentEnvironment, runtime.toodle_start(currentImage_).environment);
+    }
+    runOutputContainer.innerHTML = '';
+  }
+
+  function loadNext() {
+    const nextImage_ = Signal.get(nextImage);
+    if (nextImage_ != null) {
+      Signal.set(currentImage, nextImage_);
+      restart();
     }
   }
 
@@ -334,6 +332,29 @@ const App = (props: Props) => {
       Storage.saveScript(scriptName, text);
     } else {
       Storage.deleteScript(scriptName);
+    }
+  }
+
+  function advance() {
+    const tickCount = Signal.get(playbackSpeed);
+    const resolution = canvasResolution();
+    const origin = {x: resolution.width * 0.5, y: resolution.height * 0.5};
+    outputChannel.target = runOutputContainer;
+    for (let i = 0; Signal.get(currentEnvironment) != null && i < tickCount; i++) {
+      let currentEnvironment_ = Signal.get(currentEnvironment)!;
+      const result = runtime.toodle_continue(currentEnvironment_);
+      if (result.isError) {
+        // TODO: really we should separate runtime state and evaluation state...
+        Signal.set(evaluationState, EvaluationState.EvaluationError);
+        console.error(result.error);
+        Signal.set(currentEnvironment, null);
+      } else {
+        drawLines(ctx, origin, result.lines, Signal.get(pixelRatio));
+        result.lines.delete();
+        // TODO: fade, maybe
+        ctx.fillStyle = '#1d1f2108';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
     }
   }
 
@@ -441,23 +462,8 @@ const App = (props: Props) => {
       if (Signal.get(currentEnvironment) == null) {
         restart();
       }
-
-      for (let i = 0; Signal.get(currentEnvironment) != null && i < Signal.get(playbackSpeed); i++) {
-        let currentEnvironment_ = Signal.get(currentEnvironment)!;
-        const resolution = canvasResolution();
-        const origin = {x: resolution.width * 0.5, y: resolution.height * 0.5};
-        outputChannel.target = runOutputContainer;
-        const result = runtime.toodle_continue(currentEnvironment_);
-        if (result.isError) {
-          Signal.set(evaluationState, EvaluationState.EvaluationError);
-          console.error(result.error);
-          Signal.set(currentEnvironment, null);
-        } else {
-          drawLines(ctx, origin, result.lines, Signal.get(pixelRatio));
-          // TODO: fade, maybe
-          // ctx.fillStyle = '#1d1f210a';
-          // ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+      if (isTimeAdvancing) {
+        advance();
       }
     }));
 

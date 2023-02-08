@@ -70,12 +70,12 @@
       (die))))
 
 (defn- assert-vec2 [s x]
-  (unless (and (tuple? x) (= (length x) 2) (all number? x))
+  (unless (and (indexed? x) (= (length x) 2) (all number? x))
     (errorf "%s should be a tuple [x y] of numbers, got %q" s x))
   x)
 
 (defn- assert-vec4 [s x]
-  (unless (and (tuple? x) (= (length x) 4) (all number? x))
+  (unless (and (indexed? x) (= (length x) 4) (all number? x))
     (errorf "%s should be a tuple [r g b a] of numbers, got %q" s x))
   x)
 

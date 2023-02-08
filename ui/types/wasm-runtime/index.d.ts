@@ -23,6 +23,7 @@ declare module 'wasm-runtime' {
   export interface LineVector {
     get: (i: number) => Line,
     size: () => number,
+    delete: () => void,
   }
 
   export type Image = number;
