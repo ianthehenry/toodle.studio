@@ -37,12 +37,14 @@ declare module 'wasm-runtime' {
 
   export interface StartResult {
     environment: Environment,
+    background: Color,
   }
 
   export interface ContinueResult {
     isError: boolean,
     error: string,
     lines: LineVector,
+    background: Color,
   }
 
   export interface Module extends EmscriptenModule {
@@ -53,8 +55,8 @@ declare module 'wasm-runtime' {
     release_image: ((_: Image) => void);
     retain_environment: ((_: Environment) => void);
     release_environment: ((_: Environment) => void);
-    // TODO, obviosly
-    FS: WhyDoesTypescriptAllowGarbageHere;
+    // TODO
+    FS: any;
   }
 
   const moduleFactory: EmscriptenModuleFactory<Module>;

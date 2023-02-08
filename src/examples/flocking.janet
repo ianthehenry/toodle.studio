@@ -51,3 +51,5 @@
           (yield [start end (hsv (+ (/ age 180) speed) 1 1) (particle :w)])
           (set (particle :p) end))
       ) :yei)))))
+
+(fade 0.1)

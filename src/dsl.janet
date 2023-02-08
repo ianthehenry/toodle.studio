@@ -32,11 +32,14 @@
 (defmacro turn-around []
   ~(set direction (,scale direction -1)))
 
-(defmacro turn-left [angle]
+(defmacro turn [angle]
   ~(set direction (,rotate direction ,angle)))
 
+(defmacro turn-left [angle]
+  ~(turn ,angle))
+
 (defmacro turn-right [angle]
-  ~(set direction (,rotate direction (- ,angle))))
+  ~(turn-left (- ,angle)))
 
 (defmacro every [ticks & body]
   ~(when (and (> age 0) (= (% age ,ticks) 0))
@@ -60,14 +63,6 @@
     (set position (translate position (get-velocity)))
     (++ age)
     (yield [start position color width])))
-
-(defmacro life-cycle [max-age & instructions]
-  (with-syms [$max-age]
-    ~(let [,$max-age ,max-age]
-      (while (< age ,$max-age)
-        ,;instructions
-        (advance))
-      (die))))
 
 (defn- assert-vec2 [s x]
   (unless (and (indexed? x) (= (length x) 2) (all number? x))
@@ -149,3 +144,19 @@
     :width width
     :color color
     ,;instructions))
+
+(def- smallest-css-alpha (/ 1 255))
+
+(defn fade [a]
+  (def [r g b _] (or (dyn *background*) default-background))
+  (setdyn *background* [r g b (if (> a 0) (max a smallest-css-alpha) a)]))
+
+(defmacro maybe [p & body]
+  ~(when (< (,math/random) ,p)
+    ,;body))
+
+(defn rand [lo &opt hi]
+  (if (nil? hi)
+    (rand (- lo) lo)
+    (let [spread (- hi lo)]
+      (+ lo (* spread (math/random))))))

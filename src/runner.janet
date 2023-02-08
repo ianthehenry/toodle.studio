@@ -1,4 +1,28 @@
 (use ./globals)
+
+(defn- zip-all [t predicates]
+  (var result true)
+  (for i 0 (length t)
+    (unless ((predicates i) (t i))
+      (set result false)
+      (break)))
+  result)
+
+(defn- tuple-of? [t predicates]
+  (and
+    (tuple? t)
+    (= (length t) (length predicates))
+    (zip-all t predicates)))
+
+(defn- point? [x]
+  (tuple-of? x [number? number?]))
+
+(defn- color? [x]
+  (tuple-of? x [number? number? number? number?]))
+
+(defn- line? [x]
+  (tuple-of? x [point? point? color? number?]))
+
 (defn run [env]
   (def doodles (env *doodles*))
 
@@ -8,9 +32,12 @@
     (def next-action (resume turtle))
     (match (fiber/status turtle)
       :pending
-        (unless (nil? next-action)
-          (array/push new-doodles turtle)
-          (array/push lines next-action))
+        (cond
+          (nil? next-action) ()
+          (line? next-action) (do
+            (array/push new-doodles turtle)
+            (array/push lines next-action))
+          (eprintf "illegal yield %q" next-action))
       :error (eprintf "turtle error %q" next-action)
       :dead ()
       _ (error "unexpected next-action")))
@@ -20,3 +47,12 @@
   (array/concat doodles new-doodles)
 
   lines)
+
+(defn get-bg [env]
+  (def bg (in env *background*))
+  (cond
+    (nil? bg) default-background
+    (color? bg) bg
+    (do
+      (eprintf "invalid background %q" bg)
+      default-background)))

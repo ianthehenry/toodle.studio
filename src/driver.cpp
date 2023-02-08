@@ -8,6 +8,7 @@ using std::string;
 
 static JanetFunction *janetfn_evaluate = NULL;
 static JanetFunction *janetfn_run = NULL;
+static JanetFunction *janetfn_get_bg = NULL;
 
 Janet env_lookup(JanetTable *env, const char *name) {
   Janet entry = janet_table_get(env, janet_csymbolv(name));
@@ -71,12 +72,14 @@ struct CompileResult {
 struct StartResult {
   /* TODO: also background color, fade info? */
   uintptr_t environment;
+  Color background;
 };
 
 struct ContinueResult {
   bool is_error;
   string error;
   std::vector<Line> lines;
+  Color background;
 };
 
 CompileResult compilation_error(string message) {
@@ -92,6 +95,7 @@ ContinueResult continue_error(string message) {
     .is_error = true,
     .error = message,
     .lines = std::vector<Line>(),
+    .background = (Color) {0},
   };
 }
 
@@ -107,6 +111,22 @@ void retain_image(uintptr_t image_ptr) {
 }
 void release_image(uintptr_t image_ptr) {
   janet_gcunroot(janet_wrap_buffer(reinterpret_cast<JanetBuffer *>(image_ptr)));
+}
+
+Color unsafe_parse_color(const Janet *color) {
+  return (Color) {
+    janet_unwrap_number(color[0]),
+    janet_unwrap_number(color[1]),
+    janet_unwrap_number(color[2]),
+    janet_unwrap_number(color[3]),
+  };
+}
+
+Point unsafe_parse_point(const Janet *point) {
+  return (Point) {
+    janet_unwrap_number(point[0]),
+    janet_unwrap_number(point[1]),
+  };
 }
 
 CompileResult toodle_compile(string source) {
@@ -137,13 +157,21 @@ CompileResult toodle_compile(string source) {
 StartResult toodle_start(uintptr_t image_ptr) {
   JanetBuffer *image = reinterpret_cast<JanetBuffer *>(image_ptr);
   JanetTable *lookup = env_lookup_table(janet_core_env(NULL), "load-image-dict");
-  Janet value = janet_unmarshal(image->data, image->count, 0, lookup, NULL);
-  if (!janet_checktype(value, JANET_TABLE)) {
-    janet_panicf("%q is not an environment table", value);
+  Janet environment = janet_unmarshal(image->data, image->count, 0, lookup, NULL);
+  if (!janet_checktype(environment, JANET_TABLE)) {
+    janet_panicf("%q is not an environment table", environment);
   }
-  janet_gcroot(value);
+
+  const Janet args[1] = { environment };
+  Janet bg;
+  if (!call_fn(janetfn_get_bg, 1, args, &bg)) {
+    janet_panicf("get-bg error: %q", bg);
+  }
+
+  janet_gcroot(environment);
   return (StartResult) {
-    .environment = reinterpret_cast<uintptr_t>(janet_unwrap_table(value)),
+    .environment = reinterpret_cast<uintptr_t>(janet_unwrap_table(environment)),
+    .background = unsafe_parse_color(janet_unwrap_tuple(bg)),
   };
 }
 
@@ -156,10 +184,16 @@ ContinueResult toodle_continue(uintptr_t environment_ptr) {
 
   long long start_time = emscripten_get_now();
   Janet run_result;
+  Janet bg;
   const Janet args[1] = { janet_wrap_table(environment) };
   if (!call_fn(janetfn_run, 1, args, &run_result)) {
     return continue_error("evaluation error");
   }
+  janet_gcroot(run_result);
+  if (!call_fn(janetfn_get_bg, 1, args, &bg)) {
+    return continue_error("evaluation error");
+  }
+  janet_gcunroot(run_result);
 
   JanetArray *lines = janet_unwrap_array(run_result);
   int32_t count = lines->count;
@@ -173,9 +207,9 @@ ContinueResult toodle_continue(uintptr_t environment_ptr) {
     const Janet *color = janet_unwrap_tuple(line[2]);
     double width = janet_unwrap_number(line[3]);
     line_vec.push_back((Line) {
-      .start = {janet_unwrap_number(start[0]), janet_unwrap_number(start[1])},
-      .end = {janet_unwrap_number(end[0]), janet_unwrap_number(end[1])},
-      .color = {janet_unwrap_number(color[0]), janet_unwrap_number(color[1]), janet_unwrap_number(color[2]), janet_unwrap_number(color[3])},
+      .start = unsafe_parse_point(start),
+      .end = unsafe_parse_point(end),
+      .color = unsafe_parse_color(color),
       .width = width,
     });
   }
@@ -184,6 +218,7 @@ ContinueResult toodle_continue(uintptr_t environment_ptr) {
    .is_error = false,
    .error = "",
    .lines = line_vec,
+   .background = unsafe_parse_color(janet_unwrap_tuple(bg)),
   };
 }
 
@@ -231,6 +266,8 @@ int main() {
   janet_gcroot(janet_wrap_function(janetfn_evaluate));
   janetfn_run = env_lookup_function(janet_unwrap_table(environment), "runner/run");
   janet_gcroot(janet_wrap_function(janetfn_run));
+  janetfn_get_bg = env_lookup_function(janet_unwrap_table(environment), "runner/get-bg");
+  janet_gcroot(janet_wrap_function(janetfn_get_bg));
 }
 
 EMSCRIPTEN_BINDINGS(module) {
@@ -265,12 +302,14 @@ EMSCRIPTEN_BINDINGS(module) {
 
   value_object<StartResult>("StartResult")
     .field("environment", &StartResult::environment)
+    .field("background", &StartResult::background)
     ;
 
   value_object<ContinueResult>("ContinueResult")
     .field("isError", &ContinueResult::is_error)
     .field("error", &ContinueResult::error)
     .field("lines", &ContinueResult::lines)
+    .field("background", &ContinueResult::background)
     ;
 
   function("toodle_compile", &toodle_compile);

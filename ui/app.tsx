@@ -310,11 +310,13 @@ const App = (props: Props) => {
   }, null);
 
   function restart() {
-    ctx.fillStyle = '#1d1f21';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
     const currentImage_ = Signal.get(currentImage);
     if (currentImage_ != null) {
-      Signal.set(currentEnvironment, runtime.toodle_start(currentImage_).environment);
+      const startResult = runtime.toodle_start(currentImage_);
+      Signal.set(currentEnvironment, startResult.environment);
+      const {r, g, b, a} = startResult.background;
+      ctx.fillStyle = `rgba(${255*r}, ${255*g}, ${255*b}, 1)`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     runOutputContainer.innerHTML = '';
   }
@@ -324,6 +326,7 @@ const App = (props: Props) => {
     if (nextImage_ != null) {
       Signal.set(currentImage, nextImage_);
       restart();
+      Signal.set(timer.state, TimerState.Playing);
     }
   }
 
@@ -349,11 +352,13 @@ const App = (props: Props) => {
         console.error(result.error);
         Signal.set(currentEnvironment, null);
       } else {
+        const {r, g, b, a} = result.background;
+        if (a > 0) {
+          ctx.fillStyle = `rgba(${255*r}, ${255*g}, ${255*b}, ${a})`;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
         drawLines(ctx, origin, result.lines, Signal.get(pixelRatio));
         result.lines.delete();
-        // TODO: fade, maybe
-        ctx.fillStyle = '#1d1f2108';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
     }
   }
@@ -472,6 +477,7 @@ const App = (props: Props) => {
       scriptDirty,
       timer.state,
       timer.t,
+      playbackSpeed,
       canvasResolution,
     ] as Signal.T<any>[], () => {
       renderLoop.schedule();
