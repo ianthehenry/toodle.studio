@@ -21,11 +21,11 @@
 (defn sub [[x1 y1] [x2 y2]]
   [(- x1 x2) (- y1 y2)])
 
-(turtle :width 5 :speed 2 :color white :position [150 -50]
+(toodle :width 5 :speed 2 :color white :position [150 -50]
   (turn-left 0.005)
   (turn-left (* 0.035 (math/sin (/ age 30))))
 
-  (init (eachp [i particle] particles
+  (start (eachp [i particle] particles
     (array/push (dyn :doodles)
       (fiber/new (fn []
         (def speed (math/random))

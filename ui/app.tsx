@@ -117,7 +117,6 @@ const AnimationToolbar: Component<AnimationToolbarProps> = (props) => {
       onClick={() => props.timer.playPause()}>
       <Icon name={Signal.get(props.timer.state) === TimerState.Playing ? "pause" : "play"} />
     </button>
-    <span title="Current timestamp" class="timestamp">{Signal.get(props.timer.t).toFixed(2)}</span>
     <div class="spacer"></div>
     {choices(props.playbackSpeed, [
       {text: '1x', value: 1, title: "Normal"},
@@ -176,13 +175,13 @@ interface SidebarProps {
 const Sidebar = (props: SidebarProps) => {
   return <div class="sidebar">
     <div class="toolbar">
-      <a class="title" href="/">Toodle Studio</a>
+      <a class="title" href="/">Toodles</a>
     </div>
     <canvas
       width={170 * props.pixelRatio}
       height={170 * props.pixelRatio}
       ref={props.ref}
-      title="Click to pause.\n\nThis animated toodle\nis brought to you by\nhttps://bauble.studio --\na few lines of code to\nmake animated 3D art!"
+      title="Click to pause.\n\nThis animated toodle\nis brought to you by\nhttps://bauble.studio --\nanimated 3D art in a\nfew lines of code!"
       onClick={props.onLogoClick} />
     <ul class="file-select">
       <For each={props.scripts}>{(script) =>
@@ -260,17 +259,10 @@ const App = (props: Props) => {
 
   const scriptDirty = Signal.create(true);
   const evaluationState = Signal.create(EvaluationState.Unknown);
-  const isVisible = Signal.create(false);
 
   const timer = new Timer();
   const logoTimer = new Timer();
   const logoAnimating = Signal.create(Storage.getAnimatedLogo() ?? true);
-
-  const intersectionObserver = new IntersectionObserver((entries) => {
-    for (const entry of entries) {
-      Signal.set(isVisible, entry.isIntersecting);
-    }
-  });
 
   let nextImage: Signal.T<Image | null> = Signal.create(null);
   let currentImage: Signal.T<Image | null> = Signal.create(null);
@@ -366,7 +358,6 @@ const App = (props: Props) => {
   const mouse = Signal.create({x: 1, y: -0.5});
 
   onMount(() => {
-    intersectionObserver.observe(canvas);
     editor = installCodeMirror({
       parent: editorContainer,
       save: (text) => {
@@ -427,21 +418,9 @@ const App = (props: Props) => {
     ctx = canvas.getContext('2d')!;
 
     const renderLoop = new RenderLoop((elapsed) => batch(() => {
-      if (!Signal.get(isVisible)) {
-        return;
-      }
       const isTimeAdvancing = Signal.get(timer.state) !== TimerState.Paused;
       if (isTimeAdvancing) {
-        // If you hit the stop button, we want to redraw at zero,
-        // but we don't want to advance time forward by 16ms.
-        timer.tick(elapsed, true);
-        // Normally the advancing of time is sufficient
-        // to reschedule the loop, but if you're just
-        // resuming after a stop the initial elapsed time
-        // is 0.
-        if (elapsed === 0) {
-          renderLoop.schedule();
-        }
+        renderLoop.schedule();
       }
 
       if (Signal.get(scriptDirty)) {
@@ -473,10 +452,8 @@ const App = (props: Props) => {
     }));
 
     Signal.onEffect([
-      isVisible,
       scriptDirty,
       timer.state,
-      timer.t,
       playbackSpeed,
       canvasResolution,
     ] as Signal.T<any>[], () => {

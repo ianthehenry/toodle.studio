@@ -53,9 +53,8 @@
   ~(when (= age ,ticks)
     ,;body))
 
-(defmacro init [& body]
-  ~(when (= age 0)
-    ,;body))
+(defmacro start [& body]
+  ~(at 0 ,;body))
 
 (defmacro advance []
   ~(do
@@ -79,7 +78,7 @@
     (errorf "%s should be a number, got %q" s x))
   x)
 
-(defmacro turtle [& args]
+(defmacro toodle [& args]
   # TODO: I appear to have discovered a crazy Janet bug.
   # If I use quote instead of quasiquote, initial-color will
   # resolve to a tuple that is not bracketed. All the others are still bracketed.
@@ -136,8 +135,48 @@
           ) :yei)
         ))))
 
+(defmacro cloodle [& args]
+  (var initial-width ~1)
+  (var initial-color ~[0 0 0 1])
+
+  (var index 0)
+  (defn next-arg [&opt reason]
+    (if (= index (length args))
+      (errorf "no arguments for %q" reason))
+    (def result (in args index))
+    (++ index)
+    result)
+
+  (while (< index (length args))
+    (def flag (next-arg))
+    (if (keyword? flag)
+      (case flag
+        :width (set initial-width (next-arg :width))
+        :color (set initial-color (next-arg :color))
+        (errorf "unknown argument name %q" flag))
+      (do
+        (-- index)
+        (break))))
+
+  (def instructions (tuple/slice args index))
+
+  (with-syms [$get-position]
+    ~(array/push (dyn ,*doodles*)
+        (fiber/new (fn []
+          (defn ,$get-position [age]
+            ,;instructions)
+          (var age 0)
+          (var past-position (,$get-position age))
+          (forever
+            (++ age)
+            (def next-position (,$get-position age))
+            (yield [past-position next-position white 1])
+            (set past-position next-position))
+          ) :yei)
+        )))
+
 (defmacro clone [& instructions]
-  ~(turtle
+  ~(toodle
     :position position
     :direction direction
     :speed speed

@@ -1,4 +1,4 @@
-(turtle :color green :width 2
+(toodle :color green :width 2
   (turn-left (/ 5 (+ (* 0.75 age) 1)))
   (every 120
     (def max-age (rand 100 175))

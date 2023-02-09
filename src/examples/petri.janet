@@ -1,15 +1,12 @@
 (defn spawn [position velocity hue]
-  (var split-chance 0.03)
-  (def death-chance 0.005)
-  (turtle
+  (var split-chance 0.04)
+  (def death-chance (* split-chance 0.15))
+  (toodle
     :position position
     :velocity velocity
     :color (hsv hue 1 1)
-    (when (> (vec-length position) 400)
-      (*= speed -1)
-      (set position (translate position (get-velocity))))
-    (maybe death-chance
-      (die))
+    (when (> (vec-length position) 400) (die))
+    (maybe death-chance (die))
     (turn (rand 0.25))
     (maybe split-chance
       (*= split-chance split-chance)

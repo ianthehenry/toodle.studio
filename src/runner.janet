@@ -28,17 +28,17 @@
 
   (def new-doodles @[])
   (def lines @[])
-  (each turtle doodles
-    (def next-action (resume turtle))
-    (match (fiber/status turtle)
+  (each doodle doodles
+    (def next-action (resume doodle))
+    (match (fiber/status doodle)
       :pending
         (cond
           (nil? next-action) ()
           (line? next-action) (do
-            (array/push new-doodles turtle)
+            (array/push new-doodles doodle)
             (array/push lines next-action))
           (eprintf "illegal yield %q" next-action))
-      :error (eprintf "turtle error %q" next-action)
+      :error (eprintf "doodle error %q" next-action)
       :dead ()
       _ (error "unexpected next-action")))
 
