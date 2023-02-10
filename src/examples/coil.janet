@@ -5,5 +5,5 @@
   (start
     (cloodle
       (def angle (/ age 8))
-      (def orbit [(math/cos angle) (math/sin angle)])
-      (translate position (scale orbit 20)))))
+      (def orbit [(cos angle) (sin angle)])
+      (+ position (* orbit 20)))))

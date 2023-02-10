@@ -1,4 +1,5 @@
 (use ./globals)
+(import ./dot-syntax)
 
 (def- template-env (make-env root-env))
 (each module ["./helpers" "./dsl"]
@@ -36,6 +37,7 @@
   (run-context {
     :env env
     :chunks (chunk-string user-script)
+    :expander dot-syntax/expand
     :source "script"
     :on-parse-error parse-error
     :on-compile-error compile-error

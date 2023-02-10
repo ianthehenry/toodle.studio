@@ -12,10 +12,10 @@
       (*= split-chance split-chance)
       (spawn
         position
-        (normalize (translate (get-velocity) (marsaglia-sample)))
+        (normalize (+ (get-velocity) (marsaglia)))
         (+ hue (rand 0.1))))))
 
 (for i 0 10
-  (spawn [0 0] (normalize (marsaglia-sample)) (/ i 6)))
+  (spawn [0 0] (normalize (marsaglia)) (/ i 6)))
 
 (fade 0.02)

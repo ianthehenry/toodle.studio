@@ -8,12 +8,6 @@
   [(- (* x c) (* y s))
    (+ (* x s) (* y c))])
 
-(defn scale [[x y] s]
-  [(* s x) (* s y)])
-
-(defn translate [[x1 y1] [x2 y2]]
-  [(+ x1 x2) (+ y1 y2)])
-
 (defn coin-flip []
   (< (math/random) 0.5))
 
@@ -21,7 +15,7 @@
   ~(yield nil))
 
 (defmacro get-velocity []
-  ~(,scale direction speed))
+  ~(* direction speed))
 
 (defmacro set-velocity [v]
   (with-syms [$v]
@@ -30,7 +24,7 @@
       (set speed (,vec-length ,$v)))))
 
 (defmacro turn-around []
-  ~(set direction (,scale direction -1)))
+  ~(set direction (* direction -1)))
 
 (defmacro turn [angle]
   ~(set direction (,rotate direction ,angle)))
@@ -59,7 +53,7 @@
 (defmacro advance []
   ~(do
     (def start position)
-    (set position (translate position (get-velocity)))
+    (set position (+ position (get-velocity)))
     (++ age)
     (yield [start position color width])))
 
@@ -77,6 +71,10 @@
   (unless (number? x)
     (errorf "%s should be a number, got %q" s x))
   x)
+
+(defmacro doodle [& instructions]
+  ~(array/push (dyn ,*doodles*)
+    (fiber/new (fn [] ,;instructions) :yei)))
 
 (defmacro toodle [& args]
   # TODO: I appear to have discovered a crazy Janet bug.
@@ -121,19 +119,16 @@
 
   (with-syms [$vel]
     ~(let [,$vel ,(if initial-velocity ~(,assert-vec2 "velocity" ,initial-velocity) nil)]
-      (array/push (dyn ,*doodles*)
-        (fiber/new (fn []
-          (var position (,assert-vec2 "position" ,initial-position))
-          (var direction (if ,$vel (,normalize ,$vel) (,assert-vec2 "direction" ,initial-direction)))
-          (var speed (if ,$vel (,vec-length ,$vel) (,assert-number "speed" ,initial-speed)))
-          (var width (,assert-number "width" ,initial-width))
-          (var color (,assert-vec4 "color" ,initial-color))
-          (var age 0)
-          (forever
-            ,;instructions
-            (advance))
-          ) :yei)
-        ))))
+      (doodle
+        (var position (,assert-vec2 "position" ,initial-position))
+        (var direction (if ,$vel (,normalize ,$vel) (,assert-vec2 "direction" ,initial-direction)))
+        (var speed (if ,$vel (,vec-length ,$vel) (,assert-number "speed" ,initial-speed)))
+        (var width (,assert-number "width" ,initial-width))
+        (var color (,assert-vec4 "color" ,initial-color))
+        (var age 0)
+        (forever
+          ,;instructions
+          (advance))))))
 
 (defmacro cloodle [& args]
   (var initial-width ~1)
@@ -161,19 +156,15 @@
   (def instructions (tuple/slice args index))
 
   (with-syms [$get-position]
-    ~(array/push (dyn ,*doodles*)
-        (fiber/new (fn []
-          (defn ,$get-position [age]
-            ,;instructions)
-          (var age 0)
-          (var past-position (,$get-position age))
-          (forever
-            (++ age)
-            (def next-position (,$get-position age))
-            (yield [past-position next-position white 1])
-            (set past-position next-position))
-          ) :yei)
-        )))
+    ~(doodle
+      (defn ,$get-position [age] ,;instructions)
+      (var age 0)
+      (var past-position (,$get-position age))
+      (forever
+        (++ age)
+        (def next-position (,$get-position age))
+        (yield [past-position next-position white 1])
+        (set past-position next-position)))))
 
 (defmacro clone [& instructions]
   ~(toodle
@@ -194,8 +185,3 @@
   ~(when (< (,math/random) ,p)
     ,;body))
 
-(defn rand [lo &opt hi]
-  (if (nil? hi)
-    (rand (- lo) lo)
-    (let [spread (- hi lo)]
-      (+ lo (* spread (math/random))))))

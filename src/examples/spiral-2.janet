@@ -1,6 +1,6 @@
 (toodle :width 0.5 :speed 0
   (set color (hsv (* (/ 1 6) (cos+ (/ age 400))) 1 1))
-  (turn-left 0.08)
+  (turn 0.08)
   (+= speed 0.01)
   (every 3
     (clone
