@@ -1,9 +1,9 @@
 (def franticness 0.01)
 
-(def particles (seq [:range [0 100]]
+(def particles (seq [_ :range [0 100]]
   @{:p (* (marsaglia) 128)
-    :v (* (marsaglia) 3)
-    :h (rand 0 0.5)
+    :v (* (marsaglia) 5)
+    :h (rand 0.8 1)
     :w 1}))
 
 (var centroid [0 0])
@@ -19,7 +19,7 @@
 
   (start (eachp [i particle] particles
     (doodle
-      (def speed (math/random))
+      (def fear (rand 0 1))
       (forever
         (when (= i 0)
           (calculate-centroid))
@@ -33,11 +33,12 @@
         (set particle.v
           (mix desired-v particle.v franticness))
 
-        (def amt (/ (pow (mag repulsion) 2)))
+        (def repulsion-force (min 10 (/ (pow (mag repulsion) 2))))
 
-        (+= particle.v (* repulsion (* speed (min amt 10))))
+        (+= particle.v (* repulsion fear repulsion-force))
 
         (def end (+ start particle.v))
+        (+= particle.h 0.001)
         (yield [start end (hsv particle.h 1 1) particle.w])
         (set particle.p end))
       ))))
