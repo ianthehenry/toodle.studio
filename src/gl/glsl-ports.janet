@@ -75,13 +75,13 @@
   (def m (- l (* 0.5 c)))
   [(+ r m) (+ g m) (+ b m)])
 
-(defn vec-length [v]
+(defn mag [v]
   (var sum 0)
   (each x v (+= sum (* x x)))
   (math/sqrt sum))
 
 (defn normalize [v]
-  (def len (vec-length v))
+  (def len (mag v))
   (map |(/ $ len) v))
 
 (defn rotate-x-matrix [angle]

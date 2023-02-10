@@ -21,7 +21,7 @@
   (with-syms [$v]
     ~(let [,$v ,v]
       (set direction (,normalize ,$v))
-      (set speed (,vec-length ,$v)))))
+      (set speed (,mag ,$v)))))
 
 (defmacro turn-around []
   ~(set direction (* direction -1)))
@@ -122,7 +122,7 @@
       (doodle
         (var position (,assert-vec2 "position" ,initial-position))
         (var direction (if ,$vel (,normalize ,$vel) (,assert-vec2 "direction" ,initial-direction)))
-        (var speed (if ,$vel (,vec-length ,$vel) (,assert-number "speed" ,initial-speed)))
+        (var speed (if ,$vel (,mag ,$vel) (,assert-number "speed" ,initial-speed)))
         (var width (,assert-number "width" ,initial-width))
         (var color (,assert-vec4 "color" ,initial-color))
         (var age 0)

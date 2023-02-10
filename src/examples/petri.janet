@@ -5,7 +5,7 @@
     :position position
     :velocity velocity
     :color (hsv hue 1 1)
-    (when (> (vec-length position) 400) (die))
+    (when (> (mag position) 400) (die))
     (maybe death-chance (die))
     (turn (rand 0.25))
     (maybe split-chance

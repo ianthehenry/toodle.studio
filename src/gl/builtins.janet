@@ -95,7 +95,7 @@
 (def hsv hsv)
 (def hsl hsl)
 (def normalize normalize)
-(def vec-length vec-length)
+(def mag mag)
 (def vec-min vec-min)
 (def vec-max vec-max)
 (def distance distance)
