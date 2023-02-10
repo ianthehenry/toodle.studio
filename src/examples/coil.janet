@@ -5,4 +5,6 @@
     (cloodle
       (def angle (/ self.age 8))
       (def orbit [(cos angle) (sin angle)])
-      (+ parent.position (* orbit 20)))))
+      (def hue (ss (fract (/ self.age 120)) 0 1 0.2 0.6))
+      {:position (+ parent.position (* orbit 20))
+       :color (hsv hue 1 1)})))

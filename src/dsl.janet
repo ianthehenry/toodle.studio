@@ -9,17 +9,8 @@
   [(- (* x c) (* y s))
    (+ (* x s) (* y c))])
 
-(defn coin-flip []
-  (< (math/random) 0.5))
-
 (defmacro die []
   ~(yield nil))
-
-(defmacro set-velocity [v]
-  (with-syms [$v]
-    ~(let [,$v ,v]
-      (set direction (,normalize ,$v))
-      (set speed (,mag ,$v)))))
 
 (defmacro turn-around []
   ~(set direction (* direction -1)))
@@ -67,14 +58,14 @@
   ~(array/push (dyn ,*doodles*)
     (fiber/new (fn [] ,;instructions) :yei)))
 
-(def toodle-proto
+(def- toodle-proto
   @{:velocity (fn [self] (generic/* (self :direction) (self :speed)))
     :set-velocity (fn [self v]
       (set (self :speed) (generic/mag v))
       (set (self :direction) (generic/normalize v)))
     })
 
-(defn default-put [t k v] (if (nil? (t k)) (put t k v)))
+(defn- default-put [t k v] (if (nil? (t k)) (put t k v)))
 
 (defn- new-toodle [arg]
   (def result (case (type arg)
@@ -106,41 +97,23 @@
           (yield [,$start (self :position) (self :color) (self :width)])
           )))))
 
-(defmacro cloodle [& args]
-  (var initial-width ~1)
-  (var initial-color ~[0 0 0 1])
-
-  (var index 0)
-  (defn next-arg [&opt reason]
-    (if (= index (length args))
-      (errorf "no arguments for %q" reason))
-    (def result (in args index))
-    (++ index)
-    result)
-
-  (while (< index (length args))
-    (def flag (next-arg))
-    (if (keyword? flag)
-      (case flag
-        :width (set initial-width (next-arg :width))
-        :color (set initial-color (next-arg :color))
-        (errorf "unknown argument name %q" flag))
-      (do
-        (-- index)
-        (break))))
-
-  (def instructions (tuple/slice args index))
-
-  (with-syms [$get-position]
+(defn ?? [x dflt] (if (nil? x) dflt x))
+(defn- extract-position [state] (if (dictionary? state) (state :position) state))
+(defn- extract-key [state key dflt] (if (dictionary? state) (?? (state key) dflt) dflt))
+(defmacro cloodle [& instructions]
+  (with-syms [$next-state]
     ~(doodle
-      (defn ,$get-position [age] ,;instructions)
+      (defn ,$next-state [age] ,;instructions)
       (var age 0)
-      (var past-position (,$get-position age))
+      (var previous-position (,extract-position (,$next-state age)))
       (forever
+        (def next-state (,$next-state age))
+        (def position (,extract-position next-state))
+        (def color (,extract-key next-state :color [1 1 1 1]))
+        (def width (,extract-key next-state :width 1))
+        (yield [previous-position position color width])
         (++ age)
-        (def next-position (,$get-position age))
-        (yield [past-position next-position white 1])
-        (set past-position next-position)))))
+        (set previous-position position)))))
 
 (defn override [original overrides]
   (def clone
