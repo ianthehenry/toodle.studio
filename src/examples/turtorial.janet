@@ -125,7 +125,7 @@
 # position. See the "coil" or "symmetry"
 # examples for... examples.
 
-# That's... that's all I'm gonna right
+# That's... that's all I'm gonna write
 # for now. I realize this isn't real
 # documentation, but this isn't really
 # a real website and I'm tired.
