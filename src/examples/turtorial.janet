@@ -6,7 +6,8 @@
 # Your program will be compiled as you
 # type, but it will not start running
 # until you press cmd-enter or
-# ctrl-enter.
+# ctrl-enter, depending on how much
+# your computer cost.
 
 # The programs are written in a language
 # called Janet, which you can learn
@@ -18,8 +19,8 @@
 # started, but let's talk about what
 # we're looking at first.
 
-# The Toodle.studio runtime state
-# consists of a list of *generators*.
+# The Toodle.Studio runtime state is
+# basically just a list of generators.
 # Each of those generators might have
 # their own internal state, but the
 # runtime doesn't know anything about
@@ -27,7 +28,7 @@
 # the set of generators using the
 # (doodle) macro.
 
-# Toodle.studio will resume every
+# Toodle.Studio will resume every
 # generator on every frame (roughly 60
 # times per second), and each generator
 # has a chance to do one of four
@@ -96,7 +97,8 @@
 
 # It's fun to write toodles that behave
 # randomly as well. There's a helper
-# macro just for that:
+# macro just for doing something with
+# a certain probability:
 
 # (defmacro maybe [p & body]
 #   ~(when (< (,math/random) ,p)
@@ -120,13 +122,26 @@
 # struct with keys {:width :color
 # :position}. It will draw a line from
 # its previous position to the new
-# position. See the "coil" example for more.
+# position. See the "coil" or "symmetry"
+# examples for... examples.
 
-# Also, if you like this, you should
-# check out my actual art playground at
-# https://bauble.studio. Toodle.studio
+# That's... that's all I'm gonna right
+# for now. I realize this isn't real
+# documentation, but this isn't really
+# a real website and I'm tired.
+
+# If you like this, you should check out
+# my actual art playground at
+# https://bauble.studio. Toodle.Studio
 # is a vastly simplified version of
-# Bauble that I made as a demonstration
-# of how to embed Janet into larger
-# programs, but that turned out to be
-# pretty fun by itself!
+# Bauble.Studio that I made as a
+# demonstration of how to embed Janet
+# into larger programs, but that turned
+# out to be pretty fun by itself!
+
+# Also check out my web log:
+
+# https://ianthehenry.com/
+
+# Love,
+#  Ian
