@@ -1,6 +1,8 @@
 # [Toodle Studio](https://toodle.studio)
 
-Turtle doodles.
+Turtle doodles!
+
+I wrote this for a book I'm writing about the [Janet Programming Language](https://janet-lang.org/), as a demonstratin of how to embed Janet into a larger app.
 
 # Dependencies
 
