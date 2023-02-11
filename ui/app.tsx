@@ -175,7 +175,7 @@ interface SidebarProps {
 const Sidebar = (props: SidebarProps) => {
   return <div class="sidebar">
     <div class="toolbar">
-      <a class="title" href="/">Toodles</a>
+      <a class="title" href="/">Toodle Studio</a>
     </div>
     <canvas
       width={170 * props.pixelRatio}
