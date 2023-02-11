@@ -445,8 +445,13 @@ body.main-page .bauble {
 @media all and (max-width: 512px) {
   .bauble {
     flex-direction: column;
+    overflow-y: auto;
   }
-  .bauble .resize-handle { flex-basis: 12px; }
+  .bauble > .canvas-container,
+  .bauble > .code-container {
+    flex-shrink: 0;
+  }
+  .bauble > .resize-handle { flex-basis: 0; }
   .bauble .canvas-resize-handle { background: var(--horizontal-grip); cursor: ns-resize; }
   .bauble .output-container { height: 1.5em; }
 }
