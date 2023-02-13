@@ -203,9 +203,11 @@ function drawLines(ctx: CanvasRenderingContext2D, origin: Point, lines: LineVect
   for (let i = 0; i < lines.size(); i++) {
     const {start, end, width, color} = lines.get(i);
     ctx.beginPath();
-    ctx.moveTo(origin.x + start.x, origin.y - start.y);
-    ctx.lineTo(origin.x + end.x, origin.y - end.y);
-    ctx.lineWidth = width * pixelRatio;
+    ctx.moveTo(origin.x + pixelRatio * start.x, origin.y - pixelRatio * start.y);
+    ctx.lineTo(origin.x + pixelRatio * end.x, origin.y - pixelRatio * end.y);
+    // TODO the 2x corrects for a dumb thing where all the default examples weren't
+    // designed with different pixel ratios in mind...
+    ctx.lineWidth = 2 * width * pixelRatio;
     ctx.strokeStyle = colorToString(color);
     ctx.stroke();
   }
@@ -349,7 +351,10 @@ const App = (props: Props) => {
           ctx.fillStyle = `rgba(${255*r}, ${255*g}, ${255*b}, ${a})`;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
-        drawLines(ctx, origin, result.lines, Signal.get(pixelRatio));
+        // TODO: The 0.5 is a hack because I made all the default doodles
+        // before I was pixelRatio aware, so this causes them to be
+        // the correct scale on other resolutions...
+        drawLines(ctx, origin, result.lines, 0.5 * Signal.get(pixelRatio));
         result.lines.delete();
       }
     }
