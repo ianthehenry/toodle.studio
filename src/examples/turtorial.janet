@@ -122,8 +122,9 @@
 # struct with keys {:width :color
 # :position}. It will draw a line from
 # its previous position to the new
-# position. See the "coil" or "symmetry"
-# examples for... examples.
+# position. See the "coil," "symmetry,"
+# and "spirograph" examples for...
+# examples.
 
 # That's... that's all I'm gonna write
 # for now. I realize this isn't real
