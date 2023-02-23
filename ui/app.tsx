@@ -272,8 +272,8 @@ const App = (props: Props) => {
 
   // On memory management:
   //
-  // We always set nextImage first, and it begins a retain count of one, so we
-  // don't retain it again.
+  // We always set nextImage first, and it begins with a reference count of
+  // one, so we don't retain it again.
   //
   // We then may also set it to currentImage. But we do retain that, because
   // it didn't come directly from wasm.
