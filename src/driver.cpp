@@ -182,7 +182,6 @@ ContinueResult toodle_continue(uintptr_t environment_ptr) {
 
   JanetTable *environment = reinterpret_cast<JanetTable *>(environment_ptr);
 
-  long long start_time = emscripten_get_now();
   Janet run_result;
   Janet bg;
   const Janet args[1] = { janet_wrap_table(environment) };
