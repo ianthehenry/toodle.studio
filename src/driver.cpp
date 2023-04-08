@@ -133,16 +133,15 @@ CompileResult toodle_compile(string source) {
     return compilation_error("function uninitialized");
   }
 
-  long long start_time = emscripten_get_now();
-  Janet evaluation_result;
+  Janet environment;
   const Janet args[1] = { janet_cstringv(source.c_str()) };
-  if (!call_fn(janetfn_evaluate, 1, args, &evaluation_result)) {
-    return compilation_error("evaluation error");
+  if (!call_fn(janetfn_evaluate, 1, args, &environment)) {
+    return compilation_error("compilation error");
   }
 
   JanetTable *reverse_lookup = env_lookup_table(janet_core_env(NULL), "make-image-dict");
   JanetBuffer *image = janet_buffer(2 << 8);
-  janet_marshal(image, evaluation_result, reverse_lookup, 0);
+  janet_marshal(image, environment, reverse_lookup, 0);
 
   janet_gcroot(janet_wrap_buffer(image));
   return (CompileResult) {
