@@ -2,7 +2,7 @@
 
 Turtle doodles!
 
-I wrote this for a book I'm writing about the [Janet Programming Language](https://janet-lang.org/), as a demonstration of how to embed Janet into a larger app.
+I wrote this app for [Chapter Ten](https://janet.guide/embedding-janet/) of [*Janet for Mortals*](https://janet.guide/), as a demonstration of how to embed the [Janet Programming Language](https://janet-lang.org/) into a WebAssembly app.
 
 It began life as a heavily-simplified fork of [Bauble](https://github.com/ianthehenry/bauble.studio), which is -- in my opinion -- a much more interesting graphics playground. But [Toodle.Studio](https://toodle.studio/) is stateful, and [Bauble.Studio](https://bauble.studio/) is stateless, so the Janet interop bits are a bit more interesting here.
 
