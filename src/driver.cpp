@@ -11,11 +11,9 @@ static JanetFunction *janetfn_run = NULL;
 static JanetFunction *janetfn_get_bg = NULL;
 
 Janet env_lookup(JanetTable *env, const char *name) {
-  Janet entry = janet_table_get(env, janet_csymbolv(name));
-  if (!janet_checktype(entry, JANET_TABLE)) {
-    janet_panicf("environment entry %s missing", name);
-  }
-  return janet_table_get(janet_unwrap_table(entry), janet_ckeywordv("value"));
+  Janet out;
+  janet_resolve(env, janet_csymbol(name), &out);
+  return out;
 }
 
 JanetFunction *env_lookup_function(JanetTable *env, const char *name) {
