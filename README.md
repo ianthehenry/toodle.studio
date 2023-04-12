@@ -11,9 +11,9 @@ It began life as a heavily-simplified fork of [Bauble](https://github.com/ianthe
 - [`emscripten`](https://emscripten.org/)
 - [`redo`](https://github.com/apenwarr/redo)
 - [`yarn`](https://yarnpkg.com/)
-- Janet 1.26.0
+- Janet 1.27.0
 
-You should use the same version of Janet as the one that is vendored in the `janet/` directory. You might be able to get by with a newer version, but you will run the risk of undefined behavior if there's a material difference between the image format or the image load dictionary.
+You must use the same version of Janet as the one that is vendored in the `janet/` directory. You might be able to get by with a newer version, but you will run the risk of undefined behavior if there's a material difference between the image format or the image load dictionary.
 
 Afterwards, install JavaScript dependencies with:
 
