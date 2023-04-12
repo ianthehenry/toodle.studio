@@ -4,7 +4,6 @@ mkShell {
   nativeBuildInputs = [
     emscripten
     yarn
-    pandoc
     nodejs
     redo-apenwarr
   ];
