@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 source=$2
 page=$source
 toc=normal

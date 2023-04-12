@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 redo-ifchange mode wasm.js
 mode=$(cat mode)
 

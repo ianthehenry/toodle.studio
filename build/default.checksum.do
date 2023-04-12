@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 redo-ifchange $2
 
 extension="${2##*.}"

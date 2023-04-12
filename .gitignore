@@ -3,3 +3,5 @@ public/
 build/*
 !build/*.do
 .redo
+node_modules
+ui/node_modules
