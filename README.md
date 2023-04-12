@@ -11,6 +11,7 @@ It began life as a heavily-simplified fork of [Bauble](https://github.com/ianthe
 - [`emscripten`](https://emscripten.org/)
 - [`redo`](https://github.com/apenwarr/redo)
 - [`yarn`](https://yarnpkg.com/)
+- [`pandoc`](https://pandoc.org/)
 - Janet 1.26.0
 
 You should use the same version of Janet as the one that is vendored in the `janet/` directory. You might be able to get by with a newer version, but you will run the risk of undefined behavior if there's a material difference between the image format or the image load dictionary.
