@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 redo-always
 files=$(git ls-files build/ --ignored --exclude-standard -o)
 

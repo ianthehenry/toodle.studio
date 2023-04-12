@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 redo-ifchange main.css{,.checksum} all.js{,.checksum}
 
 css=$(< main.css.checksum)
