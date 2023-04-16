@@ -108,6 +108,8 @@
       (var previous-position (,extract-position (,$next-state age)))
       (forever
         (def next-state (,$next-state age))
+        (if (nil? next-state)
+          (yield nil))
         (def position (,extract-position next-state))
         (def color (,extract-key next-state :color [1 1 1 1]))
         (def width (,extract-key next-state :width 1))
