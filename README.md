@@ -11,9 +11,9 @@ It began life as a heavily-simplified fork of [Bauble](https://github.com/ianthe
 - [`emscripten`](https://emscripten.org/)
 - [`redo`](https://github.com/apenwarr/redo)
 - [`yarn`](https://yarnpkg.com/)
-- Janet 1.27.0
+- Janet 1.29.1
 
-You must use the same version of Janet as the one that is vendored in the `janet/` directory. You might be able to get by with a newer version, but you will run the risk of undefined behavior if there's a material difference between the image format or the image load dictionary.
+Bauble requires at least Janet 1.29.1. It may work with newer versions of Janet, assuming that the image format is compatible, but it's better to [update the version of Janet that Bauble includes](build/janet/janet-version) to match your local version.
 
 Afterwards, install JavaScript dependencies with:
 
