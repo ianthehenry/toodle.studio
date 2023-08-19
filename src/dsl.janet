@@ -28,6 +28,10 @@
   ~(when (and (> (self :age) 0) (= (% (self :age) ,ticks) 0))
     ,;body))
 
+(defmacro every* [ticks & body]
+  ~(when (= (% (self :age) ,ticks) 0)
+    ,;body))
+
 (defmacro after [ticks & body]
   ~(when (> (self :age) ,ticks)
     ,;body))
